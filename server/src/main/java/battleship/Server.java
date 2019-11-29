@@ -3,40 +3,40 @@ package battleship;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.ArrayList;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.RejectedExecutionException;
 
 public class Server {
+    private static final int GAMESERVER_PORT = 12345;
+    private static final int MAX_CONNECTIONS = 50;
+
     public static void main(String[] args) {
         //TODO: Read configs from external file (like threadPoolSize)
-
-        ExecutorService pool = Executors.newFixedThreadPool(50); // Max numbers of player (sockets)
-        ArrayList<Socket> queue = new ArrayList<>();
-
         try {
-            ServerSocket listener = new ServerSocket(12345);
-            System.out.println("[*] ServerSocket created, listening for connections...");
+            QueueManager queueManager = new QueueManager(MAX_CONNECTIONS);
 
-            // Queue manager
-            //TODO: Implement queue menager
+            // Socket listener
+            ServerSocket listener = new ServerSocket(GAMESERVER_PORT);
+            System.out.println("[*] Listening for connections on port: " + GAMESERVER_PORT);
 
             while (true) {
-                //TODO: If a player connect and disconnect a place will be occupied and the other player will be alone
-                //TODO: If a player disconnect while playing inform the other user and end the match
-                queue.add(listener.accept());
+                //TODO: If a player disconnects while in the queue it isn't removed (heartbeat / keep-alive)
+                try {
+                    Socket s = listener.accept();
+                    //TODO: Let player choose a name before joining the queue
+                    System.out.println(String.format("[*] '%s' connected", s.getLocalSocketAddress().toString()));
+                    queueManager.add(s);
+                } catch (IllegalAccessException e) {
+                    System.out.println("[!] The listener returned an empty socket");
+                    e.printStackTrace();
+                }
             }
         } catch (IOException e) {
             System.out.println("[!] An exception was thrown while creating ServerSocket");
             e.printStackTrace();
+        } catch (RejectedExecutionException e) {
+            System.out.println("[!] An exception was thrown while creating the QueueManager");
+            e.printStackTrace();
         }
-
-        Runnable playerMatcher = new Runnable() {
-            @Override
-            public void run() {
-
-            }
-        };
     }
+
 }

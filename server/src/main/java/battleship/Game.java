@@ -3,39 +3,57 @@ package battleship;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.Socket;
+import java.util.NoSuchElementException;
 import java.util.Scanner;
 
-class Game {
-    class Player implements Runnable {
-        private Socket socket;
+public class Game {
+    //TODO: If a player disconnects while in game, the other should be warned
 
-        Player(Socket socket) {
-            this.socket = socket;
+    private Player currentPlayer;
+
+    public Game() {
+        this.currentPlayer = null;
+    }
+
+    class Player implements Runnable {
+        private PlayerSocket playerSocket;
+        private Scanner in;
+        private PrintWriter out;
+
+        private Player opponent;
+
+        public Player(PlayerSocket playerSocket) {
+            this.playerSocket = playerSocket;
+            this.in = playerSocket.getIn();
+            this.out = playerSocket.getOut();
         }
 
         @Override
         public void run() {
             try {
-                Scanner in = new Scanner(socket.getInputStream());
-                PrintWriter out = new PrintWriter(socket.getOutputStream(), true);
+                // set ships disposition
+                // game start
+
 
                 out.println("[*] It Works!");
                 while (true) {
                     if (in.nextLine().equals("q"))
                         return;
                 }
-            } catch (IOException e) {
-                e.printStackTrace();
-            } catch (Exception ignored) {
-                // Catches SIGINT
+            } catch (NoSuchElementException e) {
+                // Also catches SIGINT
             } finally {
                 try {
-                    System.out.println(String.format("[*] '%s' disconnected", socket.getLocalSocketAddress().toString()));
-                    socket.close();
+                    System.out.println(String.format("[*] '%s' disconnected", playerSocket.getSocket().getLocalSocketAddress().toString()));
+                    playerSocket.getSocket().close();
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
             }
+        }
+
+        public void setOpponent(Player opponent) {
+            this.opponent = opponent;
         }
     }
 }
