@@ -12,7 +12,7 @@ public class Server {
     public static void main(String[] args) {
         //TODO: Read configs from external file (like threadPoolSize)
         try {
-            QueueManager queueManager = new QueueManager(MAX_CONNECTIONS);
+            QueueManager queueManager = new QueueManager();
 
             // Socket listener
             ServerSocket listener = new ServerSocket(GAMESERVER_PORT);

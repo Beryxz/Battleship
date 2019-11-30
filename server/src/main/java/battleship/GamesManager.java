@@ -1,14 +1,15 @@
 package battleship;
 
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.net.SocketException;
+import java.net.SocketTimeoutException;
+import java.util.concurrent.*;
 
 class GamesManager {
     private ExecutorService gamesPool;
 
-    public GamesManager(int maxParallelGames) {
+    public GamesManager() {
         // 2 players per game
-        this.gamesPool = Executors.newFixedThreadPool(maxParallelGames * 2);
+        this.gamesPool = Executors.newCachedThreadPool();
     }
 
     public void create(PlayerSocket socketP1, PlayerSocket socketP2) throws IllegalArgumentException {

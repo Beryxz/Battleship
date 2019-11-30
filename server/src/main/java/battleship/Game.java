@@ -31,11 +31,12 @@ public class Game {
         @Override
         public void run() {
             try {
-                // set ships disposition
+                // grid disposition
+                out.println("SEND_GRID");
+
                 // game start
 
 
-                out.println("[*] It Works!");
                 while (true) {
                     if (in.nextLine().equals("q"))
                         return;

@@ -3,39 +3,37 @@ package battleship;
 import java.io.IOException;
 import java.net.Socket;
 import java.util.LinkedList;
-import java.util.concurrent.Executors;
-import java.util.concurrent.RejectedExecutionException;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 
 public class QueueManager {
-    private static final int QUEUE_MANAGER_DELAY = 1;
+    private static final int QUEUE_MANAGER_DELAY = 2000; // ms to wait before checking again when <2 players in queue
 
     private LinkedList<PlayerSocket> queue;
     private ScheduledExecutorService queueManager;
     private GamesManager gamesManager;
 
     /**
-     * Starts the queue manager task that joins 2 players in a match
+     * Starts the queue manager task that joins 2 players in a match.
+     * Queue has no size limit other than system resources limitation.
      *
-     * @param maxParallelGames Maximum numbers of simultaneous games
      * @throws RejectedExecutionException If there's an error with the queue maintainer task
      */
-    public QueueManager(int maxParallelGames) throws RejectedExecutionException {
+    public QueueManager() throws RejectedExecutionException {
         this.queue = new LinkedList<>();
-        this.gamesManager = new GamesManager(maxParallelGames);
+        this.gamesManager = new GamesManager();
 
         try {
             queueManager = Executors.newSingleThreadScheduledExecutor();
-            queueManager.scheduleWithFixedDelay(playerMatcher, 5, QUEUE_MANAGER_DELAY, TimeUnit.SECONDS);
+            queueManager.scheduleWithFixedDelay(playerMatcher, 1000, QUEUE_MANAGER_DELAY, TimeUnit.MILLISECONDS);
         } catch (RejectedExecutionException e) {
             throw new RejectedExecutionException("QueueManager scheduled task was rejected");
         }
     }
 
     private Runnable playerMatcher = () -> {
-        if (length() >= 2) {
-            gamesManager.create(queue.pop(), queue.pop());
+        System.out.println("[*] Player in queue: " + length());
+        while (length() >= 2) {
+            CompletableFuture.runAsync(() -> gamesManager.create(queue.pop(), queue.pop()));
         }
     };
 
@@ -50,7 +48,9 @@ public class QueueManager {
             throw new IllegalAccessException("Player socket is null");
         }
 
-        queue.add(new PlayerSocket(player));
+        PlayerSocket playerSocket = new PlayerSocket(player);
+        queue.add(playerSocket);
+        playerSocket.getOut().println("WAIT_OPPONENT");
     }
 
     public int length() {
