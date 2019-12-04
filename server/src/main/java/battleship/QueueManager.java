@@ -33,7 +33,8 @@ public class QueueManager {
     private Runnable playerMatcher = () -> {
         System.out.println("[*] Player in queue: " + length());
         while (length() >= 2) {
-            CompletableFuture.runAsync(() -> gamesManager.create(queue.pop(), queue.pop()));
+            // With large amount of requests this may slow down the queueManager since is run with one thread and create() is blocking
+            gamesManager.create(queue.pop(), queue.pop());
         }
     };
 

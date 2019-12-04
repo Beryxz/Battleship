@@ -1,8 +1,7 @@
 package battleship;
 
-import java.net.SocketException;
-import java.net.SocketTimeoutException;
-import java.util.concurrent.*;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 class GamesManager {
     private ExecutorService gamesPool;
