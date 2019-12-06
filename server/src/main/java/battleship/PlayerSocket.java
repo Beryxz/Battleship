@@ -20,9 +20,9 @@ public class PlayerSocket {
      * @throws IllegalArgumentException If socket is null
      */
     public PlayerSocket(Socket socket) throws IOException, IllegalArgumentException {
-        if (socket == null) {
+        if (socket == null)
             throw new IllegalArgumentException("Socket is null");
-        }
+
         this.socket = socket;
         this.in = new Scanner(socket.getInputStream());
         this.out = new PrintWriter(socket.getOutputStream(), true);

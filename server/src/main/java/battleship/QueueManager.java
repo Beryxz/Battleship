@@ -1,9 +1,13 @@
 package battleship;
 
 import java.io.IOException;
+import java.lang.management.ManagementFactory;
 import java.net.Socket;
 import java.util.LinkedList;
-import java.util.concurrent.*;
+import java.util.concurrent.Executors;
+import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 public class QueueManager {
     private static final int QUEUE_MANAGER_DELAY = 2000; // ms to wait before checking again when <2 players in queue
@@ -31,7 +35,7 @@ public class QueueManager {
     }
 
     private Runnable playerMatcher = () -> {
-        System.out.println("[*] Player in queue: " + length());
+        System.out.println("[*] Player in queue: " + length() + "; n. threads: " + ManagementFactory.getThreadMXBean().getThreadCount());
         while (length() >= 2) {
             // With large amount of requests this may slow down the queueManager since is run with one thread and create() is blocking
             gamesManager.create(queue.pop(), queue.pop());
@@ -45,9 +49,8 @@ public class QueueManager {
      * @throws IOException If PlayerSocket streams couldn't be obtained
      */
     public void add(Socket player) throws IllegalAccessException, IOException {
-        if (player == null) {
+        if (player == null)
             throw new IllegalAccessException("Player socket is null");
-        }
 
         PlayerSocket playerSocket = new PlayerSocket(player);
         queue.add(playerSocket);

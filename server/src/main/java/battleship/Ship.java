@@ -38,21 +38,22 @@ public class Ship {
     }
 
     /**
-     * Tries to hit the ship, if shot succeed. the hit will be saved and number of squaresRemained will be returned.
-     * Otherwise is going to be returned -1 when ship is missed and -2 when hit has already been counted.
-     * If 0 is returned, ship is sank.
-     * @param hitPosition "XXYY" position to hit
-     * @return true if hit, false otherwise
+     * Tries to hit the ship and if succeed, will update the ship status.
+     * @param hitPosition "XXYY" position to hit.
+     * @return The appropriate Shot.* response for how the hit affected the ship.
      */
-    public int hit(String hitPosition) {
+    public Shot hit(String hitPosition) throws IllegalArgumentException {
+        if (hitPosition == null || hitPosition.length() != 4)
+            throw new IllegalArgumentException("hitPosition argument is invalid.");
+
         if (squares.contains(hitPosition)) {
             if (!squaresHit.contains(hitPosition)) {
                 squaresHit.add(hitPosition);
-                return squaresRemained(); // hit
+                return squaresRemained() == 0 ? Shot.SANK : Shot.HIT ;
             }
-            return -2; // already hit
+            return Shot.DUPLICATE;
         } else {
-            return -1; // missed
+            return Shot.OCEAN;
         }
     }
 

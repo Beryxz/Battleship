@@ -20,10 +20,15 @@ class GamesManager {
         Game game = new Game();
         Game.Player p1 = game.new Player(socketP1);
         Game.Player p2 = game.new Player(socketP2);
-        gamesPool.execute(p1);
-        gamesPool.execute(p2);
+
         // Set-up game
         p1.setOpponent(p2);
         p2.setOpponent(p1);
+        game.currentPlayer = p1;
+
+        // Start game
+        //TODO Threads aren't instantly closed when run() returns
+        gamesPool.execute(p1);
+        gamesPool.execute(p2);
     }
 }

@@ -3,9 +3,10 @@ package battleship;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.*;
+import java.util.concurrent.CountDownLatch;
 
 /**
- * TODO: Write Grid & Ship Format. What user should send ecc.
+ * TODO: Write Grid & Ship Format. What user should send ecc. (Works only for two players)
  * XXYYHLL
  * xx column
  * yy row
@@ -19,7 +20,8 @@ public class Game {
     public static final int GRID_SIZE = 10;
     public static final List<Integer> AVAILABLE_SHIPS = Arrays.asList(1, 1, 2, 2, 3, 4, 5);
 
-    private Player currentPlayer;
+    private CountDownLatch playersReady = new CountDownLatch(2);
+    public Player currentPlayer;
 
     public Game() {
         this.currentPlayer = null;
@@ -30,84 +32,210 @@ public class Game {
         private Scanner in;
         private PrintWriter out;
         private List<Ship> ships;
-
         private Player opponent;
+        private List<String> shotHistory;
+        private List<String> opponentShotHistory;
 
         public Player(PlayerSocket playerSocket) {
             this.playerSocket = playerSocket;
             this.in = playerSocket.getIn();
             this.out = playerSocket.getOut();
+            this.shotHistory = new ArrayList<>();
+            this.opponentShotHistory = new ArrayList<>();
         }
 
         @Override
         public void run() {
+            int x, y;
+            String nextLine, shot;
+
             try {
                 // grid disposition
-                setupGrid();
+                do {
+                    ships = setupGrid(in, out);
+                } while (ships == null);
+                playersReady.countDown();
+                playersReady.await();
 
                 // game start
-                //TODO: Wait for opponent
+                out.println("GAME_START");
+                // initial TURN_START
+                if (currentPlayer == this)
+                    out.println("TURN_START");
 
-                while (true) {
-                    if (in.nextLine().equals("q"))
-                        return;
+                //TODO: hasNextLine is blocking, when a player disconnect with ^C, it's not elaborated
+                while (in.hasNextLine()) {
+                    nextLine = in.nextLine();
+
+                    // Check if it's not player's turn
+                    if (currentPlayer != this) {
+                        //continue;
+                        //TODO: TEST_removeThis
+                        throw new InterruptedException("TEST_");
+                    }
+
+                    // Check command
+                    if (nextLine.startsWith("SHOOT_") && nextLine.length() == 10) {
+                        shot = nextLine.substring(6);
+
+                        // check if coordinates are valid
+                        try {
+                            x = Integer.parseInt(shot.substring(0, 2));
+                            y = Integer.parseInt(shot.substring(2, 4));
+                            if (x < 1 || x > GRID_SIZE || y < 1 || y > GRID_SIZE) {
+                                throw new NumberFormatException("Invalid coordinates");
+                            }
+                        } catch (NumberFormatException e) {
+                            out.println("INVALID");
+                            continue;
+                        }
+
+                        // check if shot was already thrown in this game
+                        if (this.shotHistory.contains(shot)) {
+                            out.println("DUPLICATE");
+                            continue;
+                        }
+
+                        this.shotHistory.add(shot);
+
+                        switch (this.opponent.shoot(shot)) {
+                            case HIT:
+                                out.println("HIT");
+                                break;
+                            case OCEAN:
+                                out.println("OCEAN");
+                                break;
+                            case SANK:
+                                out.println("SANK");
+                                break;
+                        }
+
+                        // check if player Won the game
+                        if (opponent.hasLost()) {
+                            out.println("WIN");
+                            opponent.out.println("LOST");
+                            break;
+                        }
+
+                        // End turn and pass the game to the next player
+                        currentPlayer = opponent;
+                        out.println("TURN_END");
+                        opponent.out.println("TURN_START");
+                    } else {
+                        out.println("INVALID");
+                        continue;
+                    }
                 }
-            } catch (NoSuchElementException e) {
-                // Also catches SIGINT
+            } catch (IllegalStateException | NoSuchElementException e) {
+                // Input Scanner closed or SIGINT
+                opponent.out.println("WIN_OPPONENT_DC");
+            } catch (InterruptedException e) {
+                // Catches error while awaiting game ready state
+                e.printStackTrace();
             } finally {
                 try {
                     System.out.println(String.format("[*] '%s' disconnected", playerSocket.getSocket().getLocalSocketAddress().toString()));
-                    playerSocket.getSocket().close();
+                    opponent.playerSocket.getSocket().close();
+                    this.playerSocket.getSocket().close();
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
             }
+
+            Thread.currentThread().interrupt();
+            return;
         }
 
         /**
-         * Checks that grid from input is formatted correctly.
+         * Check if this players has no ship left. Effectively having lost.
+         *
+         * @return True if player has no ship left.
+         */
+        private boolean hasLost() {
+            return ships.size() == 0;
+        }
+
+        /**
+         * Shoot in the player's grid
+         *
+         * @param coordinates "XXYY" coordinates of the shot.
+         *                    They aren't checked for validity e.g. x={1..10}, y={1..10}. Therefore any checks must be done before.
+         * @return Returns the result of the shoot
+         */
+        private Shot shoot(String coordinates) throws IllegalArgumentException {
+            if (coordinates == null || coordinates.length() != 4)
+                throw new IllegalArgumentException("Invalid coordinates");
+
+            opponentShotHistory.add(coordinates);
+
+            for (Ship s : ships) {
+                switch (s.hit(coordinates)) {
+                    case OCEAN:
+                        continue;
+                    case HIT:
+                        return Shot.HIT;
+                    case SANK:
+                        ships.remove(s);
+                        return Shot.SANK;
+                    case DUPLICATE:
+                        return Shot.DUPLICATE;
+                }
+            }
+
+            // if no ship was hit, then it was a miss
+            return Shot.OCEAN;
+        }
+
+        /**
+         * Get grid from "in" and checks that is formatted correctly.
          * - Checks number of ships sent
          * - Checks format of each one
          * - Checks there's the right number of ships
          * - Checks ships disposition don't overlap or go outside the grid.
+         *
+         * @param in  the player input socket stream Scanner
+         * @param out the player output socket stream PrintWriter
+         * @return The list of Ships. In case of unknown error, will return null.
          */
-        private void setupGrid() {
+        private List<Ship> setupGrid(Scanner in, PrintWriter out) {
             String grid;
             String[] inputShips;
             boolean isGridOk;
-            List<Ship> parsedShips;
+            List<Ship> parsedShips = null;
 
             try {
                 // GET grid and checkGrid() -> if Ok, try parseGrid() -> if Ok, continue to game
+                isGridOk = false;
                 do {
-                    isGridOk = true;
                     out.println("SEND_GRID");
                     if (in.hasNextLine()) {
                         grid = in.nextLine();
                         inputShips = grid.split("_");
 
                         if (inputShips.length != NUM_SHIPS || !checkLenOfAllElements(inputShips, 7) || !checkShipsFormat(inputShips)) {
-                            isGridOk = false;
                             out.println("GRID_ERR");
                         } else {
                             // PARSE Grid
                             // call parseGrid only after initial format checking
                             parsedShips = parseGrid(inputShips);
                             if (parsedShips == null) {
-                                isGridOk = false;
                                 out.println("GRID_ERR");
                             }
-                            this.ships = parsedShips;
+                            isGridOk = true;
                         }
                     }
 
                 } while (!isGridOk);
 
                 out.println("GRID_OK");
+                return parsedShips;
 
             } catch (IllegalStateException e) {
                 e.printStackTrace();
             }
+
+            // if unknown error occurs
+            return null;
         }
 
         /**
@@ -116,7 +244,10 @@ public class Game {
          * @param inputShips the array of ships received from user input
          * @return A list with all the ships if the grid is valid, otherwise null
          */
-        private List<Ship> parseGrid(String[] inputShips) {
+        private List<Ship> parseGrid(String[] inputShips) throws IllegalArgumentException {
+            if (inputShips == null || inputShips.length != NUM_SHIPS)
+                throw new IllegalArgumentException("Invalid input ships array");
+
             try {
                 List<Ship> ships = new ArrayList<>();
                 List<String> tmpShipCells;
@@ -183,6 +314,8 @@ public class Game {
         }
 
         private boolean checkShipsFormat(String[] ships) {
+            if (ships == null) return false;
+
             try {
                 List<Integer> availableShips = new ArrayList<>(AVAILABLE_SHIPS); // list of available ships
                 char orientation;
@@ -220,6 +353,8 @@ public class Game {
         }
 
         private boolean checkLenOfAllElements(String[] arr, int len) {
+            if (arr == null) return false;
+
             for (String elem : arr) {
                 if (elem.length() != len)
                     return false;
@@ -227,7 +362,10 @@ public class Game {
             return true;
         }
 
-        public void setOpponent(Player opponent) {
+        public void setOpponent(Player opponent) throws IllegalArgumentException {
+            if (opponent == null)
+                throw new IllegalArgumentException("opponent is null");
+
             this.opponent = opponent;
         }
     }
