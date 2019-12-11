@@ -69,9 +69,7 @@ public class Game {
 
                     // Check if it's not player's turn
                     if (currentPlayer != this) {
-                        //continue;
-                        //TODO: TEST_removeThis
-                        throw new InterruptedException("TEST_");
+                        continue;
                     }
 
                     // Check command
