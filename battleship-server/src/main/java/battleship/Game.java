@@ -1,5 +1,7 @@
 package battleship;
 
+import battleship.util.PlayerSocket;
+
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.*;
@@ -99,12 +101,15 @@ public class Game {
                         switch (this.opponent.shoot(shot)) {
                             case HIT:
                                 out.println("HIT");
+                                opponent.out.println("HIT_" + shot);
                                 break;
                             case OCEAN:
                                 out.println("OCEAN");
+                                opponent.out.println("OCEAN_" + shot);
                                 break;
                             case SANK:
                                 out.println("SANK");
+                                opponent.out.println("SANK_" + shot);
                                 break;
                         }
 

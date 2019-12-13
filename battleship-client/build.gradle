@@ -3,9 +3,9 @@ plugins {
     id 'application'
 }
 
-mainClassName = 'battleship.Main'
+mainClassName = 'battleship.Client'
 
-version '1.0'
+version '0.1'
 
 sourceCompatibility = 1.8
 
@@ -13,11 +13,29 @@ repositories {
     mavenCentral()
 }
 
+dependencies {
+    compile project(':battleship-utils')
+}
+
 jar {
     manifest {
         attributes(
                 'Class-Path': configurations.compile.collect { it.getName() }.join(' '),
-                'Main-Class': 'battleship.Main'
+                'Main-Class': 'battleship.Client'
         )
     }
+}
+
+// Includes all dependencies
+task fatJar(type: Jar) {
+    manifest {
+        attributes(
+                'Class-Path': configurations.compile.collect { it.getName() }.join(' '),
+                'Main-Class': 'battleship.Client'
+        )
+    }
+    from {
+        configurations.compile.collect { it.isDirectory() ? it : zipTree(it) }
+    }
+    with jar
 }

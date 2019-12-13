@@ -1,4 +1,4 @@
-package battleship;
+package battleship.util;
 
 import java.io.IOException;
 import java.io.PrintWriter;

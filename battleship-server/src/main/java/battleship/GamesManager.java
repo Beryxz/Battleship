@@ -1,5 +1,7 @@
 package battleship;
 
+import battleship.util.PlayerSocket;
+
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 

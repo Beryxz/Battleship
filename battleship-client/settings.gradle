@@ -1,2 +1,4 @@
 rootProject.name = 'battleship-client'
 
+include ':battleship-utils'
+project(':battleship-utils').projectDir = new File(settingsDir, '../battleship-utils')

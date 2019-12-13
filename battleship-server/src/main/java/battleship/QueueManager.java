@@ -1,5 +1,7 @@
 package battleship;
 
+import battleship.util.PlayerSocket;
+
 import java.io.IOException;
 import java.lang.management.ManagementFactory;
 import java.net.Socket;
@@ -37,16 +39,24 @@ public class QueueManager {
     private Runnable playerMatcher = () -> {
         System.out.println("[*] Player in queue: " + length() + "; n. threads: " + ManagementFactory.getThreadMXBean().getThreadCount());
         while (length() >= 2) {
-            // With large amount of requests this may slow down the queueManager since is run with one thread and create() is blocking
-            gamesManager.create(queue.pop(), queue.pop());
+            // With large amount of requests this may slow down the queueManager since it's run with one thread and create() is blocking
+            PlayerSocket
+                    ps1 = queue.pop(),
+                    ps2 = queue.pop();
+
+            ps1.getOut().println("OPPONENT_FOUND");
+            ps2.getOut().println("OPPONENT_FOUND");
+
+            gamesManager.create(ps1, ps2);
         }
     };
 
     /**
      * Adds the passed socket to the queue
+     *
      * @param player Player socket
      * @throws IllegalAccessException If socket is null
-     * @throws IOException If PlayerSocket streams couldn't be obtained
+     * @throws IOException            If PlayerSocket streams couldn't be obtained
      */
     public void add(Socket player) throws IllegalAccessException, IOException {
         if (player == null)
@@ -54,7 +64,7 @@ public class QueueManager {
 
         PlayerSocket playerSocket = new PlayerSocket(player);
         queue.add(playerSocket);
-        playerSocket.getOut().println("WAIT_OPPONENT");
+        playerSocket.getOut().println("OPPONENT_WAIT");
     }
 
     public int length() {

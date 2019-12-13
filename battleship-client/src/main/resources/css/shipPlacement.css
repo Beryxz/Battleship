@@ -1,19 +1,31 @@
-Text {
-    -fx-text-alignment: center;
+.root {
+    -fx-background-color: #202124;
 }
 
-.grid-pane {
-    -fx-background-color: #3a3a3c;
+#opponentGrid {
+    -fx-background-color: #000;
+    -fx-alignment: center;
     -fx-vgap: 1;
     -fx-hgap: 1;
     -fx-padding: 1;
 }
 
-Pane {
-    -fx-background-color: #202124;
-}
-
 Text {
+    -fx-text-alignment: center;
     -fx-fill: #FDFDFD;
     -fx-font-size: 16;
+}
+
+Label {
+    -fx-text-fill: #fdfdfd;
+    -fx-font-size: 17;
+    -fx-alignment: center;
+}
+
+Pane {
+    -fx-background-color: #3a3a3c;
+}
+
+#playerGrid, #opponentGrid {
+    -fx-border-style: solid;
 }
