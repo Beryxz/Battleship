@@ -3,9 +3,9 @@ plugins {
     id 'application'
 }
 
-mainClassName = 'battleship.Client'
+mainClassName = 'battleship.Main'
 
-version '0.1'
+version '0.2-alpha'
 
 sourceCompatibility = 1.8
 
@@ -21,7 +21,7 @@ jar {
     manifest {
         attributes(
                 'Class-Path': configurations.compile.collect { it.getName() }.join(' '),
-                'Main-Class': 'battleship.Client'
+                'Main-Class': 'battleship.Main'
         )
     }
 }
@@ -31,7 +31,7 @@ task fatJar(type: Jar) {
     manifest {
         attributes(
                 'Class-Path': configurations.compile.collect { it.getName() }.join(' '),
-                'Main-Class': 'battleship.Client'
+                'Main-Class': 'battleship.Main'
         )
     }
     from {

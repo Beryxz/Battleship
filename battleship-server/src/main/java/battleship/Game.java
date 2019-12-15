@@ -36,20 +36,19 @@ public class Game {
         private List<Ship> ships;
         private Player opponent;
         private List<String> shotHistory;
-        private List<String> opponentShotHistory;
 
         public Player(PlayerSocket playerSocket) {
             this.playerSocket = playerSocket;
             this.in = playerSocket.getIn();
             this.out = playerSocket.getOut();
             this.shotHistory = new ArrayList<>();
-            this.opponentShotHistory = new ArrayList<>();
         }
 
         @Override
         public void run() {
             int x, y;
             String nextLine, shot;
+            ShotResult shotResult;
 
             try {
                 // grid disposition
@@ -98,7 +97,8 @@ public class Game {
 
                         this.shotHistory.add(shot);
 
-                        switch (this.opponent.shoot(shot)) {
+                        shotResult = this.opponent.shoot(shot);
+                        switch (shotResult.getStatus()) {
                             case HIT:
                                 out.println("HIT");
                                 opponent.out.println("HIT_" + shot);
@@ -108,8 +108,8 @@ public class Game {
                                 opponent.out.println("OCEAN_" + shot);
                                 break;
                             case SANK:
-                                out.println("SANK");
-                                opponent.out.println("SANK_" + shot);
+                                out.println("SANK_" + shotResult.getSankShip().toString());
+                                opponent.out.println("SANK_" + shotResult.getSankShip().toString());
                                 break;
                         }
 
@@ -165,28 +165,26 @@ public class Game {
          *                    They aren't checked for validity e.g. x={1..10}, y={1..10}. Therefore any checks must be done before.
          * @return Returns the result of the shoot
          */
-        private Shot shoot(String coordinates) throws IllegalArgumentException {
+        private ShotResult shoot(String coordinates) throws IllegalArgumentException {
             if (coordinates == null || coordinates.length() != 4)
                 throw new IllegalArgumentException("Invalid coordinates");
-
-            opponentShotHistory.add(coordinates);
 
             for (Ship s : ships) {
                 switch (s.hit(coordinates)) {
                     case OCEAN:
                         continue;
                     case HIT:
-                        return Shot.HIT;
+                        return new ShotResult(Shot.HIT);
                     case SANK:
                         ships.remove(s);
-                        return Shot.SANK;
+                        return new ShotResult(Shot.SANK, s);
                     case DUPLICATE:
-                        return Shot.DUPLICATE;
+                        return new ShotResult(Shot.DUPLICATE);
                 }
             }
 
             // if no ship was hit, then it was a miss
-            return Shot.OCEAN;
+            return new ShotResult(Shot.OCEAN);
         }
 
         /**

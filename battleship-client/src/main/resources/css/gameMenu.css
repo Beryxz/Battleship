@@ -2,12 +2,13 @@
     -fx-background-color: #202124;
 }
 
-#opponentGrid {
+#targetGrid, #trackingGrid {
     -fx-background-color: #000;
     -fx-alignment: center;
     -fx-vgap: 1;
     -fx-hgap: 1;
     -fx-padding: 1;
+    -fx-border-style: solid;
 }
 
 Text {
@@ -24,8 +25,4 @@ Label {
 
 Pane {
     -fx-background-color: #3a3a3c;
-}
-
-#playerGrid, #opponentGrid {
-    -fx-border-style: solid;
 }

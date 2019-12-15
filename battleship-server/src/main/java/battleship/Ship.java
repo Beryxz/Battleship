@@ -3,6 +3,7 @@ package battleship;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class Ship {
     private final List<String> squares;
@@ -59,5 +60,10 @@ public class Ship {
 
     public int squaresRemained() {
         return this.length - squaresHit.size();
+    }
+
+    @Override
+    public String toString() {
+        return String.join("_", squares);
     }
 }
