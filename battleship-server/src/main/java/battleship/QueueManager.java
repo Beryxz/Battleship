@@ -16,6 +16,7 @@ public class QueueManager {
 
     private LinkedList<PlayerSocket> queue;
     private ScheduledExecutorService queueManager;
+    private ScheduledExecutorService statusPrinter;
     private GamesManager gamesManager;
 
     /**
@@ -31,13 +32,14 @@ public class QueueManager {
         try {
             queueManager = Executors.newSingleThreadScheduledExecutor();
             queueManager.scheduleWithFixedDelay(playerMatcher, 1000, QUEUE_MANAGER_DELAY, TimeUnit.MILLISECONDS);
+            statusPrinter = Executors.newSingleThreadScheduledExecutor();
+            statusPrinter.scheduleWithFixedDelay(printStatus, 1, 10, TimeUnit.SECONDS);
         } catch (RejectedExecutionException e) {
             throw new RejectedExecutionException("QueueManager scheduled task was rejected");
         }
     }
 
     private Runnable playerMatcher = () -> {
-        System.out.println("[*] Player in queue: " + length() + "; n. threads: " + ManagementFactory.getThreadMXBean().getThreadCount());
         while (length() >= 2) {
             // With large amount of requests this may slow down the queueManager since it's run with one thread and create() is blocking
             PlayerSocket
@@ -49,6 +51,10 @@ public class QueueManager {
 
             gamesManager.create(ps1, ps2);
         }
+    };
+
+    private Runnable printStatus = () -> {
+        System.out.println("[*] Player in queue: " + length() + "; n. threads: " + ManagementFactory.getThreadMXBean().getThreadCount());
     };
 
     /**

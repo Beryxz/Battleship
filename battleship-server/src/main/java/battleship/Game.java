@@ -258,6 +258,7 @@ public class Game {
                 char orientation;
 
                 for (String ship : inputShips) {
+                    //TODO check if (x,y) logically should be switched
                     x = Integer.parseInt(ship.substring(0, 2)) - 1;
                     y = Integer.parseInt(ship.substring(2, 4)) - 1;
                     length = Integer.parseInt(ship.substring(5, 7));
@@ -267,12 +268,16 @@ public class Game {
                     // marks cells where ships can't be placed
                     switch (orientation) {
                         case 'H':
+                            // check all ship's cells are placeable
                             for (int i = 0; i < length; i++) {
                                 if (tempGrid[x][y + i])
                                     return null;
+                            }
 
+                            // updates cell state
+                            for (int i = 0; i < length; i++) {
                                 // blocks all cells apart from the next one on the right
-                                for (int dx = (x > 0 ? -1 : 0); dx <= (x < GRID_SIZE - 1 ? 1 : 0); ++dx) {
+                                for (int dx = (x > 0 ? -1 : 0); dx <= (x + i < GRID_SIZE - 1 ? 1 : 0); ++dx) {
                                     for (int dy = (y + i > 0 ? -1 : 0); dy <= (y < GRID_SIZE - 1 ? 1 : 0); ++dy) {
                                         if (dx != 0 || dy != 1) {
                                             tempGrid[x + dx][y + i + dy] = true;
@@ -282,16 +287,22 @@ public class Game {
                                 tmpShipCells.add(String.format("%02d%02d", (x + 1), (y + 1 + i)));
                             }
                             // set last cell on the right
-                            tempGrid[x][y + length] = true;
+                            if (y + length < GRID_SIZE) {
+                                tempGrid[x][y + length] = true;
+                            }
                             break;
                         case 'V':
+                            // check all ship's cells are placeable
                             for (int i = 0; i < length; i++) {
                                 if (tempGrid[x + i][y])
                                     return null;
+                            }
 
+                            // updates cell state
+                            for (int i = 0; i < length; i++) {
                                 // blocks all cells apart from the next one on the bottom
                                 for (int dx = (x + i > 0 ? -1 : 0); dx <= (x < GRID_SIZE - 1 ? 1 : 0); ++dx) {
-                                    for (int dy = (y > 0 ? -1 : 0); dy <= (y < GRID_SIZE - 1 ? 1 : 0); ++dy) {
+                                    for (int dy = (y > 0 ? -1 : 0); dy <= (y + i < GRID_SIZE - 1 ? 1 : 0); ++dy) {
                                         if (dx != 1 || dy != 0) {
                                             tempGrid[x + i + dx][y + dy] = true;
                                         }
@@ -300,7 +311,9 @@ public class Game {
                                 tmpShipCells.add(String.format("%02d%02d", (x + 1 + i), (y + 1)));
                             }
                             // set last cell on the bottom
-                            tempGrid[x + length][y] = true;
+                            if (x + length < GRID_SIZE) {
+                                tempGrid[x + length][y] = true;
+                            }
                             break;
                     }
 

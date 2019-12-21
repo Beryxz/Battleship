@@ -6,6 +6,7 @@ import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.geometry.HPos;
 import javafx.scene.Node;
+import javafx.scene.control.Label;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.MouseEvent;
@@ -19,11 +20,16 @@ import java.util.List;
 import java.util.ResourceBundle;
 
 public class GameMenuController implements Initializable {
+    @FXML
     public GridPane trackingGrid;
+    @FXML
     public GridPane targetGrid;
+    @FXML
     public ImageView turnBulb;
+    @FXML
+    public Label infoLabel;
 
-    private PlayerSocket gsSocket;
+    final private PlayerSocket gsSocket;
     private Thread ioThread;
     private boolean ourTurn;
     private List<Cell> shootsHistory;
@@ -77,13 +83,7 @@ public class GameMenuController implements Initializable {
             n.setHalignment(HPos.CENTER);
         }
 
-        // TODO remove test code
-        ioThread = new Thread(() -> {
-            waitOpponent(this.gsSocket);
-            this.gsSocket.getOut().println("0202V05_0204H02_0404H02_0604H04_0207H01_0407H01_0409V03");
-            play(this.gsSocket);
-        });
-        ioThread.start();
+        play(this.gsSocket);
     }
 
     public void clickGrid(MouseEvent mouseEvent) {
@@ -145,7 +145,9 @@ public class GameMenuController implements Initializable {
                             }
                         });
                     } else if (msg.startsWith("LOST")) {
-                        //TODO
+                        Platform.runLater(() -> {
+                            infoLabel.setText("You Lost!");
+                        });
                     }
                 } else {
                     if (msg.equals("TURN_END")) {
@@ -177,24 +179,12 @@ public class GameMenuController implements Initializable {
                             }
                         });
                     } else if (msg.startsWith("WIN")) {
-                        //TODO
+                        Platform.runLater(() -> {
+                            infoLabel.setText("You Win!");
+                        });
                     }
                 }
-
             }
-        }
-    }
-
-    /**
-     * Returns when "OPPONENT_FOUND" message is received on the PlayerSocket input stream.
-     *
-     * @param gsSocket the game server socket
-     */
-    private void waitOpponent(final PlayerSocket gsSocket) {
-        while (gsSocket.getIn().hasNextLine()) {
-            String msg = gsSocket.getIn().nextLine();
-            if (msg.equals("OPPONENT_FOUND"))
-                return;
         }
     }
 

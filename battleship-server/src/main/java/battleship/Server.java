@@ -23,7 +23,7 @@ public class Server {
                 try {
                     Socket s = listener.accept();
                     //TODO: Let player choose a name before joining the queue
-                    System.out.println(String.format("[*] '%s' connected", s.getLocalSocketAddress().toString()));
+//                    System.out.println(String.format("[*] '%s' connected", s.getLocalSocketAddress().toString()));
                     queueManager.add(s);
                 } catch (IllegalAccessException e) {
                     System.out.println("[!] The listener returned an empty socket");

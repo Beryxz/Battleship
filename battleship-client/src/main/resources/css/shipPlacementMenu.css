@@ -1,0 +1,61 @@
+.root {
+    -fx-background-color: #202124;
+}
+
+#trackingGrid {
+    -fx-background-color: #000;
+    -fx-alignment: center;
+    -fx-vgap: 1;
+    -fx-hgap: 1;
+    -fx-padding: 1;
+    -fx-border-style: solid;
+}
+
+Text {
+    -fx-text-alignment: center;
+    -fx-fill: #FDFDFD;
+    -fx-font-size: 16;
+}
+
+Label {
+    -fx-text-fill: #fdfdfd;
+    -fx-font-size: 17;
+    -fx-alignment: center;
+}
+
+Pane {
+    -fx-background-color: #3a3a3c;
+}
+
+.ship {
+    -fx-background-color: white;
+}
+
+
+/* Orientation buttons */
+
+#orientationH {
+    -fx-background-radius: 3 0 0 3, 3 0 0 3, 2 0 0 2, 1 0 0 1;
+    -fx-background-insets: 0 0 -1 0, 0, 1, 2;
+    -fx-padding: 0.333333em 0.666667em 0.333333em 0.75em; /* 4 8 4 9 */
+}
+#orientationV {
+    -fx-background-radius: 0 3 3 0, 0 3 3 0, 0 2 2 0, 0 1 1 0;
+    -fx-background-insets: 0 0 -1 0, 0, 1 1 1 0, 2 2 2 1 ;
+}
+#orientationH:focused {
+    -fx-background-insets: -0.2 0 -0.2 -0.2, 1, 2, -1.4 0 -1.4 -1.4, 2.6;
+    -fx-background-radius: 3 0 0 3, 2 0 0 2, 1 0 0 1, 4 0 0 4, 1 0 0 1;
+}
+#orientationV:focused {
+    -fx-background-insets: -0.2 -0.2 -0.2 -1, 1 1 1 0, 2 2 2 1, -1.4 -1.4 -1.4 -1, 2.6 2.6 2.6 1.6;
+    -fx-background-radius: 0 3 3 0, 0 2 2 0, 0 1 1 0, 0 4 4 0, 0 1 1 0;
+}
+ToggleButton:selected#orientationH:focused {
+    -fx-background-insets: -0.2 0 -0.2 -0.2, 1, -1.4 0 -1.4 -1.4, 2.6;
+    -fx-background-radius: 3 0 0 3, 2 0 0 2, 4 0 0 4, 0;
+}
+ToggleButton:selected#orientationV:focused {
+    -fx-background-insets: -0.2 -0.2 -0.2 -1, 1 1 1 0, -1.4 -1.4 -1.4 -1, 2.6 2.6 2.6 1.6;
+    -fx-background-radius: 0 3 3 0, 0 2 2 0, 0 4 4 0, 0;
+}
