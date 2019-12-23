@@ -2,11 +2,45 @@
 
 > Battleship Game \[Java\]
 
+## Description
+
+Implementation of the [Battleship](https://en.wikipedia.org/wiki/Battleship_(game)) game in Java.
+
+Works with 2 players on a 10x10 Grid with 7 ships:
+
+| Length | Amount |
+|:------:|:------:|
+|1|2|
+|2|2|
+|3|1|
+|4|1|
+|5|1|
+
+Ships can't overlap or be adjacent.
+
+On a side note, Client GUI has permanent Dark Mode.
+
 ## Requirements
 
-This project uses openjdk 8.0.232 with the bundled openjfk 8.0.202
+This project uses openjdk 8 with the bundled openjfk 8
 
-(JavaFX required only by the client GUI)
+(JavaFX is required only by the client GUI)
+
+## Run
+
+By default the server listen for connections on the port `12345`
+
+### Client
+
+```bash
+java -jar battleship-client-[CLIENT_VERSION].jar
+```
+
+### Server
+
+```bash
+java -jar battleship-server-[CLIENT_VERSION].jar
+```
 
 ## Project structure
 
@@ -36,4 +70,48 @@ cd Battleship/battleship-client/
 
 ## Protocol definition
 
-//TODO
+All `X`'s and `Y`'s coordinates are in the range `1-10`.
+
+As soon as a player sank all the opponent ships, the game ends.
+
+### Ships
+
+Ships are in the format `XXYYHLL`
+
+- `xx` Column
+- `yy` Row
+- `[HV]` Orientation
+- `LL` Length
+
+### Shoot
+
+Shoots are in the format `SHOOT_XXYY`
+
+- `xx` Column
+- `yy` Row
+
+### Description
+
+Upon connecting to the server, `OPPONENT_WAIT` is sent and client must wait until another player is matched.
+When an opponent is found `OPPONENT_FOUND` is then received by the client.
+
+`SEND_GRID` informs the client that server is ready to receive the ships layout. Client should respond with all 7 ships joined by '_' character (the order doesn't matter).
+
+If the grid complies with the requirements, `GRID_OK` is sent.
+Otherwise `GRID_ERR` is sent and server asks for a new grid.
+
+When both players send a valid grid, `GAME_START` is sent and the game begins.
+
+A player turn start's with `TURN_START` and ends with `TURN_END`.
+After a client shoot in his turn, the server may respond with:
+
+|Response|Description|
+|--------|-----------|
+|HIT|A ship was hit but not sank.|
+|OCEAN|No ships were hit.|
+|SANK(_XXYY){1,n}|A ship has been sunk. The cells of the sank ship are joined by '_' and returned next to the response. E.g. SANK_0101_0102|
+|DUPLICATE|This cell has already been shot. Try another one.|
+
+In case of HIT, OCEAN and SANK_..., the same response is sent to the other player. In addition, for the HIT and OCEAN responses, the cell shot is added next to response e.g. HIT_0101.
+
+After a shoot, if a player sank all the opponent ships, `WIN` and `LOSE` are sent to the corresponding players and the game ends.

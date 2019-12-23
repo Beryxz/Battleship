@@ -22,8 +22,7 @@ public class Server {
                 //TODO: If a player disconnects while in the queue it isn't removed (heartbeat / keep-alive)
                 try {
                     Socket s = listener.accept();
-                    //TODO: Let player choose a name before joining the queue
-//                    System.out.println(String.format("[*] '%s' connected", s.getLocalSocketAddress().toString()));
+                    System.out.println(String.format("[*] '%s' connected", s.getLocalSocketAddress().toString()));
                     queueManager.add(s);
                 } catch (IllegalAccessException e) {
                     System.out.println("[!] The listener returned an empty socket");

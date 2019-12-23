@@ -24,6 +24,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.ResourceBundle;
+import java.util.concurrent.CompletableFuture;
 
 public class ShipPlacementMenuController implements Initializable {
     @FXML
@@ -63,6 +64,8 @@ public class ShipPlacementMenuController implements Initializable {
     public Text length4remained;
     @FXML
     public Text length5remained;
+    @FXML
+    public Pane waitOpponent;
 
     public static final int GRID_SIZE = 10;
     public static final int[] shipsLengths = {2, 2, 1, 1, 1};
@@ -198,38 +201,47 @@ public class ShipPlacementMenuController implements Initializable {
             // Server response
             String response = gsSocket.getIn().nextLine();
             if (response.equals("GRID_OK")) {
-                // Change stage to "GameMenu"
-                try {
-                    // Get primaryStage
-                    Stage stage = (Stage) trackingGrid.getScene().getWindow();
+                waitOpponent.setVisible(true);
 
-                    // Load gameMenu
-                    FXMLLoader gameMenuLoader = new FXMLLoader(Objects.requireNonNull(getClass().getClassLoader().getResource("views/gameMenu.fxml")));
-                    gameMenuLoader.setControllerFactory(aClass -> new GameMenuController(gsSocket));
-                    Parent gameMenu = gameMenuLoader.load();
-                    stage.setTitle("Battleship - Game");
-                    // Set on exit resources disposal
-                    stage.setOnCloseRequest(windowEvent -> {
-                        gameMenuLoader.<GameMenuController>getController().dispose();
-                         try {
-                            gsSocket.getSocket().close();
-                        } catch (IOException e) {
-                            e.printStackTrace();
-                        }
-                        Platform.exit();
-                        System.exit(0);
-                    });
-                    // Switch stages
-                    stage.setScene(new Scene(gameMenu, 600, 600));
-                    stage.setResizable(false);
-                    stage.sizeToScene();
+                CompletableFuture
+                        .runAsync(() -> waitGameStart(this.gsSocket))
+                        .thenRun(() -> Platform.runLater(this::switchToGameMenu));
+            } else {
+                throw new IllegalStateException("Server returned GRID_ERR of a supposedly valid grid");
+            }
+        });
+    }
+
+    /**
+     * Change stage to "GameMenu"
+     */
+    private void switchToGameMenu() {
+        try {
+            // Get primaryStage
+            Stage stage = (Stage) trackingGrid.getScene().getWindow();
+
+            // Load gameMenu
+            FXMLLoader gameMenuLoader = new FXMLLoader(Objects.requireNonNull(getClass().getClassLoader().getResource("views/gameMenu.fxml")));
+            gameMenuLoader.setControllerFactory(aClass -> new GameMenuController(gsSocket));
+            Parent gameMenu = gameMenuLoader.load();
+            stage.setTitle("Battleship - Game");
+            // Set on exit resources disposal
+            stage.setOnCloseRequest(windowEvent -> {
+                try {
+                    gsSocket.getSocket().close();
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
-            } else {
-                throw new IllegalStateException("Server returned GRID_ERR of a supposed valid grid");
-            }
-        });
+                Platform.exit();
+                System.exit(0);
+            });
+            // Switch stages
+            stage.setScene(new Scene(gameMenu, 600, 600));
+            stage.setResizable(false);
+            stage.sizeToScene();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     private boolean isGridSubmittable() {
@@ -427,4 +439,17 @@ public class ShipPlacementMenuController implements Initializable {
         }
     }
 
+    /**
+     * Returns when "GAME_START" message is received on the PlayerSocket input stream.
+     * To receive GAME_START, both player must first send a valid grid
+     *
+     * @param gsSocket the game server socket
+     */
+    private void waitGameStart(final PlayerSocket gsSocket) {
+        while (gsSocket.getIn().hasNextLine()) {
+            String msg = gsSocket.getIn().nextLine();
+            if (msg.equals("GAME_START"))
+                return;
+        }
+    }
 }

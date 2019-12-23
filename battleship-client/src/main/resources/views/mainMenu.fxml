@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.ProgressIndicator?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.layout.Pane?>
+<?import javafx.scene.text.*?>
+<AnchorPane maxHeight="400" maxWidth="400" minHeight="400" minWidth="400" prefHeight="400.0" prefWidth="400.0" stylesheets="/css/mainMenu.css" xmlns="http://javafx.com/javafx/8.0.171" xmlns:fx="http://javafx.com/fxml/1" fx:controller="battleship.controllers.MainMenuController">
+   <TextField fx:id="serverIp" layoutX="170.0" layoutY="144.0" prefHeight="28.0" prefWidth="161.0" text="127.0.0.1" />
+   <TextField fx:id="serverPort" layoutX="170.0" layoutY="192.0" prefHeight="28.0" prefWidth="161.0" text="12345" />
+   <Text layoutX="120.0" layoutY="80.0" strokeType="OUTSIDE" strokeWidth="0.0" styleClass="title" text="Battleship" />
+   <Text layoutX="90.0" layoutY="162.0" strokeType="OUTSIDE" strokeWidth="0.0" text="Server ip:" />
+   <Text layoutX="74.0" layoutY="211.0" strokeType="OUTSIDE" strokeWidth="0.0" text="Server port:" />
+   <Button fx:id="connectBtn" layoutX="126.0" layoutY="272.0" mnemonicParsing="false" prefHeight="26.0" prefWidth="150.0" text="Connect" />
+   <Pane fx:id="waitOpponent" layoutX="80.0" layoutY="324.0" prefHeight="52.0" prefWidth="241.0" visible="false">
+      <ProgressIndicator layoutX="185.0" layoutY="-1.0" />
+      <Text layoutX="14.0" layoutY="31.0" strokeType="OUTSIDE" strokeWidth="0.0" text="Waiting for opponent" />
+   </Pane>
+   <Text fx:id="errorTxt" layoutX="84.0" layoutY="355.0" strokeType="OUTSIDE" strokeWidth="0.0" styleClass="error" text="Can't connect to the server" visible="false" />
+</AnchorPane>

@@ -8,12 +8,19 @@ import java.util.*;
 import java.util.concurrent.CountDownLatch;
 
 /**
- * TODO: Write Grid & Ship Format. What user should send ecc. (Works only for two players)
- * XXYYHLL
+ * Battleship game
+ *
+ * Works with 2 players on a 10x10 Grid with 7 ships (2x1, 2x2, 1x3, 1x4, 1x5).
+ * Ships are in the format "XXYYHLL"
+ * and has the following meaning
  * xx column
  * yy row
  * [HV] orientation
  * LL length
+ *
+ * After SEND_GRID, client should respond with all 7 ships joined by '_'
+ *
+ * After GAME_START, client only needs to send "SHOOT_XXYY", 1 each turn.
  */
 public class Game {
     //TODO: If a player disconnects while in game, the other should be warned
@@ -211,6 +218,7 @@ public class Game {
                     out.println("SEND_GRID");
                     if (in.hasNextLine()) {
                         grid = in.nextLine();
+
                         inputShips = grid.split("_");
 
                         if (inputShips.length != NUM_SHIPS || !checkLenOfAllElements(inputShips, 7) || !checkShipsFormat(inputShips)) {
@@ -254,13 +262,12 @@ public class Game {
                 List<String> tmpShipCells;
                 // cellState has the values: 0=(water), 1=(ship | waterNextToShip). Ship's shouldn't be placed on cellState 1
                 boolean[][] tempGrid = new boolean[GRID_SIZE][GRID_SIZE];
-                int x, y, length;
+                int column, row, length;
                 char orientation;
 
                 for (String ship : inputShips) {
-                    //TODO check if (x,y) logically should be switched
-                    x = Integer.parseInt(ship.substring(0, 2)) - 1;
-                    y = Integer.parseInt(ship.substring(2, 4)) - 1;
+                    column = Integer.parseInt(ship.substring(0, 2)) - 1;
+                    row = Integer.parseInt(ship.substring(2, 4)) - 1;
                     length = Integer.parseInt(ship.substring(5, 7));
                     orientation = ship.charAt(4);
                     tmpShipCells = new ArrayList<>();
@@ -270,49 +277,49 @@ public class Game {
                         case 'H':
                             // check all ship's cells are placeable
                             for (int i = 0; i < length; i++) {
-                                if (tempGrid[x][y + i])
+                                if (tempGrid[row][column + i])
                                     return null;
                             }
 
                             // updates cell state
                             for (int i = 0; i < length; i++) {
                                 // blocks all cells apart from the next one on the right
-                                for (int dx = (x > 0 ? -1 : 0); dx <= (x + i < GRID_SIZE - 1 ? 1 : 0); ++dx) {
-                                    for (int dy = (y + i > 0 ? -1 : 0); dy <= (y < GRID_SIZE - 1 ? 1 : 0); ++dy) {
+                                for (int dx = (row > 0 ? -1 : 0); dx <= (row < GRID_SIZE - 1 ? 1 : 0); ++dx) {
+                                    for (int dy = (column + i > 0 ? -1 : 0); dy <= (column + i < GRID_SIZE - 1 ? 1 : 0); ++dy) {
                                         if (dx != 0 || dy != 1) {
-                                            tempGrid[x + dx][y + i + dy] = true;
+                                            tempGrid[row + dx][column + i + dy] = true;
                                         }
                                     }
                                 }
-                                tmpShipCells.add(String.format("%02d%02d", (x + 1), (y + 1 + i)));
+                                tmpShipCells.add(String.format("%02d%02d", (row + 1), (column + 1 + i)));
                             }
                             // set last cell on the right
-                            if (y + length < GRID_SIZE) {
-                                tempGrid[x][y + length] = true;
+                            if (column + length < GRID_SIZE) {
+                                tempGrid[row][column + length] = true;
                             }
                             break;
                         case 'V':
                             // check all ship's cells are placeable
                             for (int i = 0; i < length; i++) {
-                                if (tempGrid[x + i][y])
+                                if (tempGrid[row + i][column])
                                     return null;
                             }
 
                             // updates cell state
                             for (int i = 0; i < length; i++) {
                                 // blocks all cells apart from the next one on the bottom
-                                for (int dx = (x + i > 0 ? -1 : 0); dx <= (x < GRID_SIZE - 1 ? 1 : 0); ++dx) {
-                                    for (int dy = (y > 0 ? -1 : 0); dy <= (y + i < GRID_SIZE - 1 ? 1 : 0); ++dy) {
+                                for (int dx = (row + i > 0 ? -1 : 0); dx <= (row + i < GRID_SIZE - 1 ? 1 : 0); ++dx) {
+                                    for (int dy = (column > 0 ? -1 : 0); dy <= (column < GRID_SIZE - 1 ? 1 : 0); ++dy) {
                                         if (dx != 1 || dy != 0) {
-                                            tempGrid[x + i + dx][y + dy] = true;
+                                            tempGrid[row + i + dx][column + dy] = true;
                                         }
                                     }
                                 }
-                                tmpShipCells.add(String.format("%02d%02d", (x + 1 + i), (y + 1)));
+                                tmpShipCells.add(String.format("%02d%02d", (row + 1 + i), (column + 1)));
                             }
                             // set last cell on the bottom
-                            if (x + length < GRID_SIZE) {
-                                tempGrid[x + length][y] = true;
+                            if (row + length < GRID_SIZE) {
+                                tempGrid[row + length][column] = true;
                             }
                             break;
                     }
@@ -333,7 +340,7 @@ public class Game {
             try {
                 List<Integer> availableShips = new ArrayList<>(AVAILABLE_SHIPS); // list of available ships
                 char orientation;
-                int x, y;
+                int row, column;
                 Integer length;
 
                 // check same number of ships
@@ -352,11 +359,11 @@ public class Game {
                         return false;
 
                     // check coordinates
-                    x = Integer.parseInt(ship.substring(0, 2));
-                    y = Integer.parseInt(ship.substring(2, 4));
-                    if (x < 1 || x > GRID_SIZE || (orientation == 'V' && x > (GRID_SIZE + 1 - length)))
+                    column = Integer.parseInt(ship.substring(0, 2));
+                    row = Integer.parseInt(ship.substring(2, 4));
+                    if (row < 1 || row > GRID_SIZE || (orientation == 'V' && row > (GRID_SIZE + 1 - length)))
                         return false;
-                    if (y < 1 || y > GRID_SIZE || (orientation == 'H' && y > (GRID_SIZE + 1 - length)))
+                    if (column < 1 || column > GRID_SIZE || (orientation == 'H' && column > (GRID_SIZE + 1 - length)))
                         return false;
                 }
 

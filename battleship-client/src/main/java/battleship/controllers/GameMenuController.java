@@ -19,6 +19,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.ResourceBundle;
 
+//TODO show player grid in top left
 public class GameMenuController implements Initializable {
     @FXML
     public GridPane trackingGrid;
@@ -30,7 +31,6 @@ public class GameMenuController implements Initializable {
     public Label infoLabel;
 
     final private PlayerSocket gsSocket;
-    private Thread ioThread;
     private boolean ourTurn;
     private List<Cell> shootsHistory;
     private Cell lastShoot;
@@ -83,7 +83,8 @@ public class GameMenuController implements Initializable {
             n.setHalignment(HPos.CENTER);
         }
 
-        play(this.gsSocket);
+        // Start game
+        new Thread(() -> play(this.gsSocket)).start();
     }
 
     public void clickGrid(MouseEvent mouseEvent) {
@@ -103,93 +104,80 @@ public class GameMenuController implements Initializable {
         }
     }
 
-
-    private void play(final PlayerSocket gsSocket) {
-        boolean gameStarted = false;
-
+    public void play(final PlayerSocket gsSocket) {
         while (gsSocket.getIn().hasNextLine()) {
             String msg = gsSocket.getIn().nextLine();
-            System.out.println("Server: " + msg);
 
-            if (!gameStarted) {
-                if (msg.equals("GAME_START"))
-                    gameStarted = true;
+            if (!this.ourTurn) {
+                if (msg.equals("TURN_START")) {
+                    ourTurn = true;
+                    Platform.runLater(() -> {
+                        this.turnBulb.setImage(new Image("img/bulb_red_on.png"));
+                    });
+                } else if (msg.startsWith("HIT_")) {
+                    Platform.runLater(() -> {
+                        ImageView iv = new ImageView("img/hit.png");
+                        iv.setFitWidth(25);
+                        iv.setFitHeight(25);
+                        this.trackingGrid.add(iv, Integer.parseInt(msg.substring(6, 8)) - 1, Integer.parseInt(msg.substring(4, 6)) - 1);
+                    });
+                } else if (msg.startsWith("OCEAN_")) {
+                    Platform.runLater(() -> {
+                        ImageView iv = new ImageView("img/ocean.png");
+                        iv.setFitWidth(25);
+                        iv.setFitHeight(25);
+                        this.trackingGrid.add(iv, Integer.parseInt(msg.substring(8, 10)) - 1, Integer.parseInt(msg.substring(6, 8)) - 1);
+                    });
+                } else if (msg.startsWith("SANK_")) {
+                    Platform.runLater(() -> {
+                        for (String ship : msg.substring(5).split("_")) {
+                            ImageView iv = new ImageView("img/sank.png");
+                            iv.setFitWidth(25);
+                            iv.setFitHeight(25);
+                            this.trackingGrid.add(iv, Integer.parseInt(ship.substring(2, 4)) - 1, Integer.parseInt(ship.substring(0, 2)) - 1);
+                        }
+                    });
+                } else if (msg.startsWith("LOST")) {
+                    Platform.runLater(() -> {
+                        infoLabel.setText("You Lost!");
+                    });
+                }
             } else {
-                if (!this.ourTurn) {
-                    if (msg.equals("TURN_START")) {
-                        ourTurn = true;
-                        Platform.runLater(() -> {
-                            this.turnBulb.setImage(new Image("img/bulb_red_on.png"));
-                        });
-                    } else if (msg.startsWith("HIT_")) {
-                        Platform.runLater(() -> {
-                            ImageView iv = new ImageView("img/hit.png");
-                            iv.setFitWidth(25);
-                            iv.setFitHeight(25);
-                            this.trackingGrid.add(iv, Integer.parseInt(msg.substring(6, 8)) - 1, Integer.parseInt(msg.substring(4, 6)) - 1);
-                        });
-                    } else if (msg.startsWith("OCEAN_")) {
-                        Platform.runLater(() -> {
-                            ImageView iv = new ImageView("img/ocean.png");
-                            iv.setFitWidth(25);
-                            iv.setFitHeight(25);
-                            this.trackingGrid.add(iv, Integer.parseInt(msg.substring(8, 10)) - 1, Integer.parseInt(msg.substring(6, 8)) - 1);
-                        });
-                    } else if (msg.startsWith("SANK_")) {
-                        Platform.runLater(() -> {
-                            for (String ship : msg.substring(5).split("_")) {
-                                ImageView iv = new ImageView("img/sank.png");
-                                iv.setFitWidth(25);
-                                iv.setFitHeight(25);
-                                this.trackingGrid.add(iv, Integer.parseInt(ship.substring(2, 4)) - 1, Integer.parseInt(ship.substring(0, 2)) - 1);
-                            }
-                        });
-                    } else if (msg.startsWith("LOST")) {
-                        Platform.runLater(() -> {
-                            infoLabel.setText("You Lost!");
-                        });
-                    }
-                } else {
-                    if (msg.equals("TURN_END")) {
-                        ourTurn = false;
-                        Platform.runLater(() -> {
-                            this.turnBulb.setImage(new Image("img/bulb_red_off.png"));
-                        });
-                    } else if (msg.equals("HIT")) {
-                        Platform.runLater(() -> {
-                            ImageView iv = new ImageView("img/hit.png");
+                if (msg.equals("TURN_END")) {
+                    ourTurn = false;
+                    Platform.runLater(() -> {
+                        this.turnBulb.setImage(new Image("img/bulb_red_off.png"));
+                    });
+                } else if (msg.equals("HIT")) {
+                    Platform.runLater(() -> {
+                        ImageView iv = new ImageView("img/hit.png");
+                        iv.setFitWidth(30);
+                        iv.setFitHeight(30);
+                        this.targetGrid.add(iv, lastShoot.colIndex, lastShoot.rowIndex);
+                    });
+                } else if (msg.equals("OCEAN")) {
+                    Platform.runLater(() -> {
+                        ImageView iv = new ImageView("img/ocean.png");
+                        iv.setFitWidth(30);
+                        iv.setFitHeight(30);
+                        this.targetGrid.add(iv, lastShoot.colIndex, lastShoot.rowIndex);
+                    });
+                } else if (msg.startsWith("SANK_")) {
+                    Platform.runLater(() -> {
+                        for (String ship : msg.substring(5).split("_")) {
+                            ImageView iv = new ImageView("img/sank.png");
                             iv.setFitWidth(30);
                             iv.setFitHeight(30);
-                            this.targetGrid.add(iv, lastShoot.colIndex, lastShoot.rowIndex);
-                        });
-                    } else if (msg.equals("OCEAN")) {
-                        Platform.runLater(() -> {
-                            ImageView iv = new ImageView("img/ocean.png");
-                            iv.setFitWidth(30);
-                            iv.setFitHeight(30);
-                            this.targetGrid.add(iv, lastShoot.colIndex, lastShoot.rowIndex);
-                        });
-                    } else if (msg.startsWith("SANK_")) {
-                        Platform.runLater(() -> {
-                            for (String ship : msg.substring(5).split("_")) {
-                                ImageView iv = new ImageView("img/sank.png");
-                                iv.setFitWidth(30);
-                                iv.setFitHeight(30);
-                                this.targetGrid.add(iv, Integer.parseInt(ship.substring(2, 4)) - 1, Integer.parseInt(ship.substring(0, 2)) - 1);
-                            }
-                        });
-                    } else if (msg.startsWith("WIN")) {
-                        Platform.runLater(() -> {
-                            infoLabel.setText("You Win!");
-                        });
-                    }
+                            this.targetGrid.add(iv, Integer.parseInt(ship.substring(2, 4)) - 1, Integer.parseInt(ship.substring(0, 2)) - 1);
+                        }
+                    });
+                } else if (msg.startsWith("WIN")) {
+                    Platform.runLater(() -> {
+                        infoLabel.setText("You Win!");
+                    });
                 }
             }
         }
-    }
-
-    public void dispose() {
-        ioThread.interrupt();
     }
 
     private class Cell {
