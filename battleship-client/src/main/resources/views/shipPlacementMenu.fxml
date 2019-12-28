@@ -94,29 +94,24 @@
     <RadioButton fx:id="length3" disable="true" layoutX="486.0" layoutY="51.0" mnemonicParsing="false" text="3" toggleGroup="$ships" />
     <RadioButton fx:id="length4" disable="true" layoutX="535.0" layoutY="51.0" mnemonicParsing="false" prefHeight="18.0" prefWidth="33.0" text="4" toggleGroup="$ships" />
     <RadioButton fx:id="length5" disable="true" layoutX="582.0" layoutY="51.0" mnemonicParsing="false" text="5" toggleGroup="$ships" />
-    <ToggleButton fx:id="orientationH" layoutX="425.0" layoutY="90.0" mnemonicParsing="false" text="Horizontal">
-        <toggleGroup>
-            <ToggleGroup fx:id="shipOrientation" />
-        </toggleGroup>
-    </ToggleButton>
-    <ToggleButton fx:id="orientationV" layoutX="510.0" layoutY="90.0" mnemonicParsing="false" text="Vertical" toggleGroup="$shipOrientation" />
-    <Label layoutX="434.0" layoutY="146.0" text="Ships remained" />
-    <Label layoutX="450.0" layoutY="183.0" text="1:" />
-    <Text fx:id="length1remained" layoutX="473.0" layoutY="200.0" strokeType="OUTSIDE" strokeWidth="0.0" text="0" />
-    <Label layoutX="450.0" layoutY="214.0" text="2:" />
-    <Text fx:id="length2remained" layoutX="473.0" layoutY="231.0" strokeType="OUTSIDE" strokeWidth="0.0" text="0" />
-    <Label layoutX="450.0" layoutY="248.0" text="3:" />
-    <Text fx:id="length3remained" layoutX="473.0" layoutY="265.0" strokeType="OUTSIDE" strokeWidth="0.0" text="0" />
-    <Label layoutX="515.0" layoutY="183.0" text="4:" />
-    <Text fx:id="length4remained" layoutX="538.0" layoutY="200.0" strokeType="OUTSIDE" strokeWidth="0.0" text="0" />
-    <Label layoutX="515.0" layoutY="213.0" text="5:" />
-    <Text fx:id="length5remained" layoutX="538.0" layoutY="230.0" strokeType="OUTSIDE" strokeWidth="0.0" text="0" />
-    <Line endX="17" layoutX="537.0" layoutY="240.0" startX="-100.0" />
-    <Line endX="-100.0" endY="108.0" layoutX="597.0" layoutY="164.0" startX="-100.0" startY="15" />
-    <Line endX="17" layoutX="537.0" layoutY="208.0" startX="-100.0" />
-    <Button fx:id="confirmGrid" disable="true" layoutX="393.0" layoutY="299.0" mnemonicParsing="false" text="Confirm Grid" />
-    <Button fx:id="clearGrid" layoutX="513.0" layoutY="299.0" mnemonicParsing="false" text="Clear Grid" />
-    <Pane fx:id="waitOpponent" layoutX="375.0" layoutY="332.0" prefHeight="52.0" prefWidth="241.0" visible="false">
+    <Button fx:id="toggleOrientation" layoutX="418.0" layoutY="98.0" mnemonicParsing="false" prefHeight="25.0" prefWidth="170.0" text="Toggle ship orientation" />
+    <Label layoutX="436.0" layoutY="145.0" prefHeight="20.0" prefWidth="133.0" text="Ships remained" />
+    <Label layoutX="454.0" layoutY="183.0" text="1:" />
+    <Text fx:id="length1remained" layoutX="477.0" layoutY="200.0" strokeType="OUTSIDE" strokeWidth="0.0" text="0" />
+    <Label layoutX="454.0" layoutY="214.0" text="2:" />
+    <Text fx:id="length2remained" layoutX="477.0" layoutY="231.0" strokeType="OUTSIDE" strokeWidth="0.0" text="0" />
+    <Label layoutX="454.0" layoutY="248.0" text="3:" />
+    <Text fx:id="length3remained" layoutX="477.0" layoutY="265.0" strokeType="OUTSIDE" strokeWidth="0.0" text="0" />
+    <Label layoutX="519.0" layoutY="183.0" text="4:" />
+    <Text fx:id="length4remained" layoutX="542.0" layoutY="200.0" strokeType="OUTSIDE" strokeWidth="0.0" text="0" />
+    <Label layoutX="519.0" layoutY="213.0" text="5:" />
+    <Text fx:id="length5remained" layoutX="542.0" layoutY="230.0" strokeType="OUTSIDE" strokeWidth="0.0" text="0" />
+    <Line endX="17" layoutX="541.0" layoutY="240.0" startX="-100.0" stroke="WHITE" />
+    <Line endX="-100.0" endY="108.0" layoutX="601.0" layoutY="164.0" startX="-100.0" startY="15" stroke="WHITE" />
+    <Line endX="17" layoutX="541.0" layoutY="208.0" startX="-100.0" stroke="WHITE" />
+    <Button fx:id="confirmGrid" disable="true" layoutX="399.0" layoutY="299.0" mnemonicParsing="false" prefHeight="25.0" prefWidth="110.0" text="Confirm Grid" />
+    <Button fx:id="clearGrid" layoutX="523.0" layoutY="299.0" mnemonicParsing="false" prefHeight="25.0" prefWidth="90.0" text="Clear Grid" />
+    <Pane fx:id="waitOpponent" layoutX="380.0" layoutY="332.0" prefHeight="52.0" prefWidth="241.0" visible="false">
         <ProgressIndicator layoutX="185.0" layoutY="-1.0" />
         <Text layoutX="14.0" layoutY="31.0" strokeType="OUTSIDE" strokeWidth="0.0" text="Waiting for opponent" />
     </Pane>

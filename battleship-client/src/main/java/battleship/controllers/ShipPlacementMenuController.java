@@ -10,7 +10,10 @@ import javafx.geometry.HPos;
 import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
-import javafx.scene.control.*;
+import javafx.scene.control.Button;
+import javafx.scene.control.RadioButton;
+import javafx.scene.control.Toggle;
+import javafx.scene.control.ToggleGroup;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.ColumnConstraints;
 import javafx.scene.layout.GridPane;
@@ -49,12 +52,6 @@ public class ShipPlacementMenuController implements Initializable {
     public RadioButton length5;
 
     @FXML
-    public ToggleGroup shipOrientation;
-    @FXML
-    public ToggleButton orientationH;
-    @FXML
-    public ToggleButton orientationV;
-    @FXML
     public Text length1remained;
     @FXML
     public Text length2remained;
@@ -66,6 +63,8 @@ public class ShipPlacementMenuController implements Initializable {
     public Text length5remained;
     @FXML
     public Pane waitOpponent;
+    @FXML
+    public Button toggleOrientation;
 
     public static final int GRID_SIZE = 10;
     public static final int[] shipsLengths = {2, 2, 1, 1, 1};
@@ -73,6 +72,7 @@ public class ShipPlacementMenuController implements Initializable {
     private int[] availableShipsLengths;
     private List<String> shipsCells;
     private PlayerSocket gsSocket;
+    private char shipOrientation;
 
     /**
      * cellState has the values: 0=(water), 1=(ship | waterNextToShip). Ship's shouldn't be placed on cellState 1
@@ -107,7 +107,7 @@ public class ShipPlacementMenuController implements Initializable {
 
         // Select initial button states
         length1.setSelected(true);
-        orientationH.setSelected(true);
+        shipOrientation = 'H';
 
         // Set initial remained ships count
         updateRemainedShipsAndRadioButtons();
@@ -115,7 +115,7 @@ public class ShipPlacementMenuController implements Initializable {
         // Events handler
         for (Node n : trackingGrid.getChildren()) {
             n.setOnMouseEntered((MouseEvent me) -> {
-                setAllCells(n, "-fx-background-color: yellow", "-fx-background-color: red");
+                setAllCells(n, "-fx-background-color: #bb86fc", "-fx-background-color: #cf6679");
             });
             n.setOnMouseExited((MouseEvent me) -> {
                 setAllCells(n, null, null);
@@ -123,6 +123,7 @@ public class ShipPlacementMenuController implements Initializable {
 
             // Event handler for actual ship placement
             n.setOnMouseClicked((MouseEvent me) -> {
+                // check a ship length is selected
                 Toggle selectedRadioShipLength = ships.getSelectedToggle();
                 if (selectedRadioShipLength == null)
                     return;
@@ -136,7 +137,7 @@ public class ShipPlacementMenuController implements Initializable {
                 String newShipInfo = String.format("%02d%02d%s%02d",
                         (int) Math.ceil(cell / 10.0), // xx
                         ((cell - 1) % 10) + 1, // yy
-                        (shipOrientation.getSelectedToggle() == orientationH) ? "H" : "V", // Orientation
+                        this.shipOrientation, // Orientation
                         shipLength // Length
                 );
 
@@ -154,7 +155,7 @@ public class ShipPlacementMenuController implements Initializable {
                     // Color cells
                     ObservableList<Node> cells = trackingGrid.getChildren();
                     int selectedCell = cells.indexOf(n);
-                    int orientation = (shipOrientation.getSelectedToggle() == orientationH) ? 10 : 1; // 10='H', 1='V'
+                    int orientation = (this.shipOrientation == 'H') ? 10 : 1; // 10='H', 1='V'
                     Node tmpCell;
 
                     // color ship in the grid
@@ -166,6 +167,8 @@ public class ShipPlacementMenuController implements Initializable {
                 }
             });
         }
+
+        toggleOrientation.setOnMouseClicked(mouseEvent -> this.shipOrientation = (shipOrientation == 'H') ? 'V' : 'H');
 
         clearGrid.setOnMouseClicked(mouseEvent -> {
             // disable grid submit
@@ -192,6 +195,8 @@ public class ShipPlacementMenuController implements Initializable {
         confirmGrid.setOnMouseClicked(mouseEvent -> {
             // disable double click
             confirmGrid.setDisable(true);
+            clearGrid.setDisable(true);
+            toggleOrientation.setDisable(true);
 
             // Send grid
             String grid = String.join("_", shipsCells);
@@ -207,6 +212,8 @@ public class ShipPlacementMenuController implements Initializable {
                         .runAsync(() -> waitGameStart(this.gsSocket))
                         .thenRun(() -> Platform.runLater(this::switchToGameMenu));
             } else {
+                clearGrid.setDisable(false);
+                toggleOrientation.setDisable(false);
                 throw new IllegalStateException("Server returned GRID_ERR of a supposedly valid grid");
             }
         });
@@ -298,6 +305,21 @@ public class ShipPlacementMenuController implements Initializable {
         } else {
             length5.setDisable(false);
         }
+
+        // Select another ship length if nothing is selected and another is available
+        if (ships.getSelectedToggle() == null) {
+            if (!length1.isDisabled()) {
+                length1.setSelected(true);
+            } else if (!length2.isDisabled()) {
+                length2.setSelected(true);
+            }  else if (!length3.isDisabled()) {
+                length3.setSelected(true);
+            }  else if (!length4.isDisabled()) {
+                length4.setSelected(true);
+            }  else if (!length5.isDisabled()) {
+                length5.setSelected(true);
+            }
+        }
     }
 
     /**
@@ -318,7 +340,7 @@ public class ShipPlacementMenuController implements Initializable {
                 shipLength = Integer.parseInt(((RadioButton) selectedRadioShipLength).getText()),
                 x,
                 y;
-        int orientation = (shipOrientation.getSelectedToggle() == orientationH) ? 10 : 1; // 10='H', 1='V'
+        int orientation = (this.shipOrientation == 'H') ? 10 : 1; // 10='H', 1='V'
 
         if ((orientation == 10 && (selectedCell + (shipLength - 1) * orientation) <= 100) || // horizontal overflow check
                 (orientation == 1 && ((selectedCell - 1 + shipLength - 1) % 10) >= (selectedCell - 1) % 10)) // vertical overflow check

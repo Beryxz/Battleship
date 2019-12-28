@@ -144,7 +144,7 @@ public class Game {
                 e.printStackTrace();
             } finally {
                 try {
-                    System.out.println(String.format("[*] '%s' disconnected", playerSocket.getSocket().getLocalSocketAddress().toString()));
+                    System.out.println(String.format("[*] '%s' disconnected", playerSocket.getSocket().getRemoteSocketAddress().toString()));
                     opponent.playerSocket.getSocket().close();
                     this.playerSocket.getSocket().close();
                 } catch (IOException e) {

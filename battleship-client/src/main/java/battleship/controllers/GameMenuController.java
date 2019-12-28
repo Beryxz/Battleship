@@ -17,6 +17,7 @@ import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.ColumnConstraints;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.Pane;
+import javafx.scene.text.Text;
 import javafx.stage.Stage;
 
 import java.io.IOException;
@@ -26,7 +27,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.ResourceBundle;
 
-//TODO show player grid in top left
 public class GameMenuController implements Initializable {
     @FXML
     public GridPane trackingGrid;
@@ -40,12 +40,23 @@ public class GameMenuController implements Initializable {
     public Pane endDialog;
     @FXML
     public Button backMainMenu;
+    @FXML
+    public Text length1remained;
+    @FXML
+    public Text length2remained;
+    @FXML
+    public Text length3remained;
+    @FXML
+    public Text length4remained;
+    @FXML
+    public Text length5remained;
 
     final private PlayerSocket gsSocket;
     private boolean ourTurn;
     private List<Cell> shootsHistory;
     private Cell lastShoot;
     private String playerGrid;
+    private int[] availableShipsLengths = {2, 2, 1, 1, 1};
 
     public GameMenuController(final PlayerSocket gsSocket, final String playerGrid) throws IllegalArgumentException {
         if (gsSocket == null) {
@@ -117,6 +128,9 @@ public class GameMenuController implements Initializable {
             }
         }
 
+        // Set remained ships count
+        updateRemainedShips();
+
         // Events Handlers
         backMainMenu.setOnMouseClicked(mouseEvent -> {
             try {
@@ -128,8 +142,32 @@ public class GameMenuController implements Initializable {
             }
         });
 
+        for (Node cell :
+                targetGrid.getChildren()) {
+
+            cell.setOnMouseEntered(mouseEvent -> {
+                if (ourTurn)
+                    cell.setStyle("-fx-background-color: #bb86fc");
+            });
+
+            cell.setOnMouseExited(mouseEvent -> {
+                cell.setStyle(null);
+            });
+        }
+
         // Start game
         new Thread(() -> play(this.gsSocket)).start();
+    }
+
+    /**
+     * Updates GUI remained count based on local array 'availableShipsLengths'
+     */
+    private void updateRemainedShips() {
+        length1remained.setText(String.valueOf(availableShipsLengths[0]));
+        length2remained.setText(String.valueOf(availableShipsLengths[1]));
+        length3remained.setText(String.valueOf(availableShipsLengths[2]));
+        length4remained.setText(String.valueOf(availableShipsLengths[3]));
+        length5remained.setText(String.valueOf(availableShipsLengths[4]));
     }
 
     /**
@@ -239,7 +277,9 @@ public class GameMenuController implements Initializable {
                     });
                 } else if (msg.startsWith("SANK_")) {
                     Platform.runLater(() -> {
-                        for (String shipCell : msg.substring(5).split("_")) {
+                        String[] shipCells = msg.substring(5).split("_");
+
+                        for (String shipCell : shipCells) {
                             int columnIndex = Integer.parseInt(shipCell.substring(2, 4)) - 1;
                             int rowIndex = Integer.parseInt(shipCell.substring(0, 2)) - 1;
                             Pane p = new Pane();
@@ -253,6 +293,10 @@ public class GameMenuController implements Initializable {
                             iv.setFitHeight(30);
                             this.targetGrid.add(iv, columnIndex, rowIndex);
                         }
+
+                        // Update remained ships count
+                        availableShipsLengths[shipCells.length - 1]--;
+                        updateRemainedShips();
                     });
                 } else if (msg.startsWith("WIN")) {
                     Platform.runLater(() -> {
