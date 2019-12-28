@@ -1,9 +1,6 @@
 package battleship;
 
-import battleship.controllers.MainMenuController;
-import battleship.util.PlayerSocket;
 import javafx.application.Application;
-import javafx.application.Platform;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
@@ -16,8 +13,6 @@ public class Main extends Application {
     /**
      * Gameserver Socket
      */
-    private PlayerSocket gsSocket;
-
     public static void main(String[] args) {
         launch(args);
     }
@@ -27,18 +22,6 @@ public class Main extends Application {
         try {
             // Stage set-up
             FXMLLoader mainMenuLoader = new FXMLLoader(Objects.requireNonNull(getClass().getClassLoader().getResource("views/mainMenu.fxml")));
-            mainMenuLoader.setControllerFactory(aClass -> new MainMenuController(gsSocket));
-            primaryStage.setOnCloseRequest(windowEvent -> {
-                try {
-                    if (gsSocket != null)
-                        gsSocket.getSocket().close();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-
-                Platform.exit();
-                System.exit(0);
-            });
 
             Parent mainMenu = mainMenuLoader.load();
             primaryStage.setTitle("Battleship");

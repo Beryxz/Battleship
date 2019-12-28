@@ -3,9 +3,13 @@ package battleship.controllers;
 import battleship.util.PlayerSocket;
 import javafx.application.Platform;
 import javafx.fxml.FXML;
+import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
 import javafx.geometry.HPos;
 import javafx.scene.Node;
+import javafx.scene.Parent;
+import javafx.scene.Scene;
+import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
@@ -13,10 +17,13 @@ import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.ColumnConstraints;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.Pane;
+import javafx.stage.Stage;
 
+import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.ResourceBundle;
 
 //TODO show player grid in top left
@@ -29,18 +36,24 @@ public class GameMenuController implements Initializable {
     public ImageView turnBulb;
     @FXML
     public Label infoLabel;
+    @FXML
+    public Pane endDialog;
+    @FXML
+    public Button backMainMenu;
 
     final private PlayerSocket gsSocket;
     private boolean ourTurn;
     private List<Cell> shootsHistory;
     private Cell lastShoot;
+    private String playerGrid;
 
-    public GameMenuController(final PlayerSocket gsSocket) throws IllegalArgumentException {
+    public GameMenuController(final PlayerSocket gsSocket, final String playerGrid) throws IllegalArgumentException {
         if (gsSocket == null) {
             throw new IllegalArgumentException("gsSocket is null");
         }
 
         this.gsSocket = gsSocket;
+        this.playerGrid = playerGrid;
     }
 
     @FXML
@@ -55,21 +68,21 @@ public class GameMenuController implements Initializable {
         for (int i = 0; i < trackingGrid.getRowConstraints().size(); i++) {
             for (int j = 0; j < trackingGrid.getColumnConstraints().size(); j++) {
                 Pane p = new Pane();
-                this.trackingGrid.add(p, i, j);
                 p.setMaxHeight(25);
                 p.setPrefHeight(25);
                 p.setMaxWidth(25);
                 p.setPrefWidth(25);
+                this.trackingGrid.add(p, i, j);
             }
         }
         for (int i = 0; i < targetGrid.getRowConstraints().size(); i++) {
             for (int j = 0; j < targetGrid.getColumnConstraints().size(); j++) {
                 Pane p = new Pane();
-                this.targetGrid.add(p, i, j);
                 p.setMaxHeight(30);
                 p.setPrefHeight(30);
                 p.setMaxWidth(30);
                 p.setPrefWidth(30);
+                this.targetGrid.add(p, i, j);
             }
         }
 
@@ -83,8 +96,61 @@ public class GameMenuController implements Initializable {
             n.setHalignment(HPos.CENTER);
         }
 
+        // Set ships in trackingGrid
+        for (String shipCell : playerGrid.split("_")) {
+            int i = Integer.parseInt(shipCell.substring(2, 4)) - 1,
+                    j = Integer.parseInt(shipCell.substring(0, 2)) - 1;
+            char orientation = shipCell.charAt(4);
+
+            for (int iLen = 0; iLen < Integer.parseInt(shipCell.substring(5, 7)); iLen++) {
+                Pane p = new Pane();
+                p.setMaxHeight(25);
+                p.setPrefHeight(25);
+                p.setMaxWidth(25);
+                p.setPrefWidth(25);
+                p.getStyleClass().add("ship");
+                if (orientation == 'H') {
+                    this.trackingGrid.add(p, j + iLen, i);
+                } else {
+                    this.trackingGrid.add(p, j, i + iLen);
+                }
+            }
+        }
+
+        // Events Handlers
+        backMainMenu.setOnMouseClicked(mouseEvent -> {
+            try {
+                gsSocket.getSocket().close();
+                switchToMainMenu();
+            } catch (IOException e) {
+                e.printStackTrace();
+                Platform.exit();
+            }
+        });
+
         // Start game
         new Thread(() -> play(this.gsSocket)).start();
+    }
+
+    /**
+     * Change stage to "MainMenu"
+     */
+    private void switchToMainMenu() {
+        try {
+            // Get primaryStage
+            Stage stage = (Stage) trackingGrid.getScene().getWindow();
+
+            // Load gameMenu
+            FXMLLoader mainMenuLoader = new FXMLLoader(Objects.requireNonNull(getClass().getClassLoader().getResource("views/mainMenu.fxml")));
+            Parent mainMenu = mainMenuLoader.load();
+            stage.setTitle("Battleship");
+            // Switch stages
+            stage.setScene(new Scene(mainMenu, 400, 400));
+            stage.setResizable(false);
+            stage.sizeToScene();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     public void clickGrid(MouseEvent mouseEvent) {
@@ -130,16 +196,25 @@ public class GameMenuController implements Initializable {
                     });
                 } else if (msg.startsWith("SANK_")) {
                     Platform.runLater(() -> {
-                        for (String ship : msg.substring(5).split("_")) {
+                        for (String shipCell : msg.substring(5).split("_")) {
+                            int columnIndex = Integer.parseInt(shipCell.substring(2, 4)) - 1;
+                            int rowIndex = Integer.parseInt(shipCell.substring(0, 2)) - 1;
+                            Pane p = new Pane();
+                            p.setMaxHeight(25);
+                            p.setPrefHeight(25);
+                            p.setMaxWidth(25);
+                            p.setPrefWidth(25);
+                            this.trackingGrid.add(p, columnIndex, rowIndex);
                             ImageView iv = new ImageView("img/sank.png");
                             iv.setFitWidth(25);
                             iv.setFitHeight(25);
-                            this.trackingGrid.add(iv, Integer.parseInt(ship.substring(2, 4)) - 1, Integer.parseInt(ship.substring(0, 2)) - 1);
+                            this.trackingGrid.add(iv, columnIndex, rowIndex);
                         }
                     });
                 } else if (msg.startsWith("LOST")) {
                     Platform.runLater(() -> {
                         infoLabel.setText("You Lost!");
+                        endDialog.setVisible(true);
                     });
                 }
             } else {
@@ -164,16 +239,25 @@ public class GameMenuController implements Initializable {
                     });
                 } else if (msg.startsWith("SANK_")) {
                     Platform.runLater(() -> {
-                        for (String ship : msg.substring(5).split("_")) {
+                        for (String shipCell : msg.substring(5).split("_")) {
+                            int columnIndex = Integer.parseInt(shipCell.substring(2, 4)) - 1;
+                            int rowIndex = Integer.parseInt(shipCell.substring(0, 2)) - 1;
+                            Pane p = new Pane();
+                            p.setMaxHeight(30);
+                            p.setPrefHeight(30);
+                            p.setMaxWidth(30);
+                            p.setPrefWidth(30);
+                            this.targetGrid.add(p, columnIndex, rowIndex);
                             ImageView iv = new ImageView("img/sank.png");
                             iv.setFitWidth(30);
                             iv.setFitHeight(30);
-                            this.targetGrid.add(iv, Integer.parseInt(ship.substring(2, 4)) - 1, Integer.parseInt(ship.substring(0, 2)) - 1);
+                            this.targetGrid.add(iv, columnIndex, rowIndex);
                         }
                     });
                 } else if (msg.startsWith("WIN")) {
                     Platform.runLater(() -> {
                         infoLabel.setText("You Win!");
+                        endDialog.setVisible(true);
                     });
                 }
             }

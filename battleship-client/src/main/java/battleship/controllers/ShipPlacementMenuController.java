@@ -222,7 +222,7 @@ public class ShipPlacementMenuController implements Initializable {
 
             // Load gameMenu
             FXMLLoader gameMenuLoader = new FXMLLoader(Objects.requireNonNull(getClass().getClassLoader().getResource("views/gameMenu.fxml")));
-            gameMenuLoader.setControllerFactory(aClass -> new GameMenuController(gsSocket));
+            gameMenuLoader.setControllerFactory(aClass -> new GameMenuController(gsSocket, String.join("_", shipsCells)));
             Parent gameMenu = gameMenuLoader.load();
             stage.setTitle("Battleship - Game");
             // Set on exit resources disposal

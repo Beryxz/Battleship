@@ -11,6 +11,14 @@
     -fx-border-style: solid;
 }
 
+#trackingGrid .ship, #targetGrid .ship {
+    -fx-background-color: white;
+}
+
+#endDialog {
+
+}
+
 Text {
     -fx-text-alignment: center;
     -fx-fill: #FDFDFD;

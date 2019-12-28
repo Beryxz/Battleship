@@ -34,8 +34,10 @@ public class MainMenuController implements Initializable {
 
     private PlayerSocket gsSocket;
 
-    public MainMenuController(PlayerSocket gsSocket) {
-        this.gsSocket = gsSocket;
+    public MainMenuController() {}
+
+    public PlayerSocket getGsSocket() {
+        return gsSocket;
     }
 
     @Override
