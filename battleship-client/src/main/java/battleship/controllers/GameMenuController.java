@@ -79,20 +79,16 @@ public class GameMenuController implements Initializable {
         for (int i = 0; i < trackingGrid.getRowConstraints().size(); i++) {
             for (int j = 0; j < trackingGrid.getColumnConstraints().size(); j++) {
                 Pane p = new Pane();
-                p.setMaxHeight(25);
-                p.setPrefHeight(25);
-                p.setMaxWidth(25);
-                p.setPrefWidth(25);
+                p.setPrefSize(25, 25);
+                p.setMaxSize(25, 25);
                 this.trackingGrid.add(p, i, j);
             }
         }
         for (int i = 0; i < targetGrid.getRowConstraints().size(); i++) {
             for (int j = 0; j < targetGrid.getColumnConstraints().size(); j++) {
                 Pane p = new Pane();
-                p.setMaxHeight(30);
-                p.setPrefHeight(30);
-                p.setMaxWidth(30);
-                p.setPrefWidth(30);
+                p.setPrefSize(30, 30);
+                p.setMaxSize(30, 30);
                 this.targetGrid.add(p, i, j);
             }
         }
@@ -115,10 +111,8 @@ public class GameMenuController implements Initializable {
 
             for (int iLen = 0; iLen < Integer.parseInt(shipCell.substring(5, 7)); iLen++) {
                 Pane p = new Pane();
-                p.setMaxHeight(25);
-                p.setPrefHeight(25);
-                p.setMaxWidth(25);
-                p.setPrefWidth(25);
+                p.setPrefSize(25, 25);
+                p.setMaxSize(25, 25);
                 p.getStyleClass().add("ship");
                 if (orientation == 'H') {
                     this.trackingGrid.add(p, j + iLen, i);
@@ -238,10 +232,8 @@ public class GameMenuController implements Initializable {
                             int columnIndex = Integer.parseInt(shipCell.substring(2, 4)) - 1;
                             int rowIndex = Integer.parseInt(shipCell.substring(0, 2)) - 1;
                             Pane p = new Pane();
-                            p.setMaxHeight(25);
-                            p.setPrefHeight(25);
-                            p.setMaxWidth(25);
-                            p.setPrefWidth(25);
+                            p.setPrefSize(25, 25);
+                            p.setMaxSize(25, 25);
                             this.trackingGrid.add(p, columnIndex, rowIndex);
                             ImageView iv = new ImageView("img/sank.png");
                             iv.setFitWidth(25);
@@ -251,6 +243,13 @@ public class GameMenuController implements Initializable {
                     });
                 } else if (msg.startsWith("LOST")) {
                     Platform.runLater(() -> {
+                        // Show remained ships
+                        for (String cell : msg.substring(5).split("_")) {
+                            int columnIndex = Integer.parseInt(cell.substring(2)) - 1,
+                                    rowIndex = Integer.parseInt(cell.substring(0, 2)) - 1;
+                            this.targetGrid.getChildren().get(columnIndex * 10 + rowIndex).getStyleClass().add("ship");
+                        }
+
                         infoLabel.setText("You Lost!");
                         endDialog.setVisible(true);
                     });
@@ -283,10 +282,8 @@ public class GameMenuController implements Initializable {
                             int columnIndex = Integer.parseInt(shipCell.substring(2, 4)) - 1;
                             int rowIndex = Integer.parseInt(shipCell.substring(0, 2)) - 1;
                             Pane p = new Pane();
-                            p.setMaxHeight(30);
-                            p.setPrefHeight(30);
-                            p.setMaxWidth(30);
-                            p.setPrefWidth(30);
+                            p.setPrefSize(30, 30);
+                            p.setMaxSize(30, 30);
                             this.targetGrid.add(p, columnIndex, rowIndex);
                             ImageView iv = new ImageView("img/sank.png");
                             iv.setFitWidth(30);

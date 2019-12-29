@@ -114,4 +114,6 @@ After a client shoot in his turn, the server may respond with:
 
 In case of HIT, OCEAN and SANK_..., the same response is sent to the other player. In addition, for the HIT and OCEAN responses, the cell shot is added next to response e.g. HIT_0101.
 
-After a shoot, if a player sank all the opponent ships, `WIN` and `LOSE` are sent to the corresponding players and the game ends.
+After a shoot, if a player sank all the opponent ships, `WIN` and `LOST_...` are sent to the corresponding players and the game ends.
+
+`LOST_XXYY_...` message contains all the remaining ships cells.

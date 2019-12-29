@@ -6,10 +6,11 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.*;
 import java.util.concurrent.CountDownLatch;
+import java.util.stream.Collectors;
 
 /**
  * Battleship game
- *
+ * <p>
  * Works with 2 players on a 10x10 Grid with 7 ships (2x1, 2x2, 1x3, 1x4, 1x5).
  * Ships are in the format "XXYYHLL"
  * and has the following meaning
@@ -17,9 +18,9 @@ import java.util.concurrent.CountDownLatch;
  * yy row
  * [HV] orientation
  * LL length
- *
+ * <p>
  * After SEND_GRID, client should respond with all 7 ships joined by '_'
- *
+ * <p>
  * After GAME_START, client only needs to send "SHOOT_XXYY", 1 each turn.
  */
 public class Game {
@@ -123,7 +124,10 @@ public class Game {
                         // check if player Won the game
                         if (opponent.hasLost()) {
                             out.println("WIN");
-                            opponent.out.println("LOST");
+                            opponent.out.println("LOST_" + this.ships.stream()
+                                    .map(Ship::toString)
+                                    .collect(Collectors.joining("_"))
+                            );
                             break;
                         }
 
