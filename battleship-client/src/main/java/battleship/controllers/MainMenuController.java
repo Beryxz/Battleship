@@ -19,6 +19,9 @@ import java.net.URL;
 import java.util.Objects;
 import java.util.ResourceBundle;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 public class MainMenuController implements Initializable {
     @FXML
@@ -33,6 +36,7 @@ public class MainMenuController implements Initializable {
     public Text errorTxt;
 
     private PlayerSocket gsSocket;
+    private ScheduledExecutorService heartbeatThread;
 
     public MainMenuController() {}
 
@@ -49,15 +53,27 @@ public class MainMenuController implements Initializable {
             try {
                 // Try to connect to server
                 Socket sock = new Socket(serverIp.getText(), Integer.parseInt(serverPort.getText(), 10));
+                gsSocket = new PlayerSocket(sock);
+
+                // Initialize heartbeat thread
+                heartbeatThread = Executors.newSingleThreadScheduledExecutor();
+                heartbeatThread.scheduleAtFixedRate(() -> {
+                    gsSocket.getOut().println("PING");
+                }, 0, 1200, TimeUnit.MILLISECONDS);
 
                 // Wait for opponent
                 waitOpponent.setVisible(true);
-                gsSocket = new PlayerSocket(sock);
 
                 CompletableFuture
-                        .runAsync(() -> waitGridRequest(gsSocket))
-                        .thenRun(() -> {
-                            Platform.runLater(this::switchToShipPlacementMenu);
+                        .supplyAsync(() -> waitGridRequest(gsSocket))
+                        .thenAccept((isOpponentFound) -> {
+                            if (isOpponentFound)
+                                Platform.runLater(this::switchToShipPlacementMenu);
+                            else {
+                                waitOpponent.setVisible(false);
+                                errorTxt.setVisible(true);
+                                connectBtn.setDisable(false);
+                            }
                         });
             } catch (Exception e) {
                 errorTxt.setVisible(true);
@@ -78,12 +94,13 @@ public class MainMenuController implements Initializable {
 
             // Load gameMenu
             FXMLLoader shipPlacementMenuLoader = new FXMLLoader(Objects.requireNonNull(getClass().getClassLoader().getResource("views/shipPlacementMenu.fxml")));
-            shipPlacementMenuLoader.setControllerFactory(aClass -> new ShipPlacementMenuController(gsSocket));
+            shipPlacementMenuLoader.setControllerFactory(aClass -> new ShipPlacementMenuController(gsSocket, heartbeatThread));
             Parent shipPlacementMenu = shipPlacementMenuLoader.load();
             stage.setTitle("Battleship - Ship placement");
             // Set on exit resources disposal
             stage.setOnCloseRequest(windowEvent -> {
                 try {
+                    heartbeatThread.shutdownNow();
                     gsSocket.getSocket().close();
                 } catch (IOException e) {
                     e.printStackTrace();
@@ -106,11 +123,16 @@ public class MainMenuController implements Initializable {
      *
      * @param gsSocket the game server socket
      */
-    private void waitGridRequest(final PlayerSocket gsSocket) {
-        while (gsSocket.getIn().hasNextLine()) {
-            String msg = gsSocket.getIn().nextLine();
-            if (msg.equals("SEND_GRID"))
-                return;
+    private boolean waitGridRequest(final PlayerSocket gsSocket) {
+        try {
+            while (gsSocket.getIn().hasNextLine()) {
+                String msg = gsSocket.getIn().nextLine();
+                if (msg.equals("SEND_GRID"))
+                    return true;
+            }
+        } catch (IllegalStateException e) {
+            e.printStackTrace();
         }
+        return false;
     }
 }

@@ -115,16 +115,16 @@
     </GridPane>
     <Label layoutX="420.0" layoutY="44.0" text="Turn status" />
     <ImageView fx:id="turnBulb" fitHeight="50.0" fitWidth="50.0" layoutX="526.0" layoutY="29.0" pickOnBounds="true" preserveRatio="true" />
-    <Pane fx:id="endDialog" layoutX="324.0" layoutY="115.0" prefHeight="86.0" prefWidth="242.0" visible="false">
+    <Pane fx:id="endDialog" layoutX="312.0" layoutY="88.0" prefHeight="151.0" prefWidth="263.0" visible="false">
         <effect>
             <DropShadow color="#121212" height="30.0" radius="14.5" width="30.0" />
         </effect>
-        <Label fx:id="infoLabel" layoutX="-1.0" layoutY="14.0" prefHeight="21.0" prefWidth="242.0" textAlignment="CENTER">
+        <Label fx:id="infoLabel" layoutX="13.0" layoutY="14.0" prefHeight="71.0" prefWidth="236.0" textAlignment="CENTER" wrapText="true">
             <font>
                 <Font size="18.0" />
             </font>
         </Label>
-        <Button fx:id="backMainMenu" layoutX="56.0" layoutY="43.0" mnemonicParsing="false" prefHeight="25.0" prefWidth="130.0" text="Go to Main Menu" />
+        <Button fx:id="backMainMenu" layoutX="60.0" layoutY="107.0" mnemonicParsing="false" prefHeight="30.0" prefWidth="144.0" text="Go to Main Menu" />
     </Pane>
     <Pane layoutX="51.0" layoutY="344.0" prefHeight="183.0" prefWidth="167.0">
         <effect>

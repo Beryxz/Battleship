@@ -12,10 +12,10 @@
    <Text layoutY="82.0" strokeType="OUTSIDE" strokeWidth="0.0" styleClass="title" text="Battleship" textAlignment="CENTER" wrappingWidth="400.0" />
    <Text layoutX="90.0" layoutY="162.0" strokeType="OUTSIDE" strokeWidth="0.0" text="Server ip:" />
    <Text layoutX="74.0" layoutY="211.0" strokeType="OUTSIDE" strokeWidth="0.0" text="Server port:" />
-   <Button fx:id="connectBtn" layoutX="125.0" layoutY="273.0" maxHeight="30.0" maxWidth="150.0" minHeight="30.0" minWidth="150.0" mnemonicParsing="false" prefHeight="30.0" prefWidth="150.0" text="Connect" AnchorPane.leftAnchor="125.0" AnchorPane.rightAnchor="125.0" />
+   <Button fx:id="connectBtn" layoutX="125.0" layoutY="273.0" maxHeight="30.0" maxWidth="150.0" minHeight="30.0" minWidth="150.0" mnemonicParsing="false" prefHeight="30.0" prefWidth="150.0" text="Connect" />
    <Pane fx:id="waitOpponent" layoutX="80.0" layoutY="324.0" prefHeight="52.0" prefWidth="241.0" visible="false">
       <ProgressIndicator layoutX="185.0" layoutY="-1.0" />
       <Text layoutX="14.0" layoutY="31.0" strokeType="OUTSIDE" strokeWidth="0.0" text="Waiting for opponent" />
    </Pane>
    <Text fx:id="errorTxt" layoutY="355.0" strokeType="OUTSIDE" strokeWidth="0.0" styleClass="error" text="Can't connect to the server" textAlignment="CENTER" visible="false" wrappingWidth="400.0" />
-</AnchorPane>
+   </AnchorPane>

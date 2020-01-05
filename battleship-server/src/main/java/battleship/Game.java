@@ -1,10 +1,11 @@
 package battleship;
 
-import battleship.util.PlayerSocket;
+import battleship.heartbeat.HeartbeatClient;
 
-import java.io.IOException;
-import java.io.PrintWriter;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.concurrent.CountDownLatch;
 import java.util.stream.Collectors;
 
@@ -24,8 +25,6 @@ import java.util.stream.Collectors;
  * After GAME_START, client only needs to send "SHOOT_XXYY", 1 each turn.
  */
 public class Game {
-    //TODO: If a player disconnects while in game, the other should be warned
-
     public static final int NUM_SHIPS = 7;
     public static final int GRID_SIZE = 10;
     public static final List<Integer> AVAILABLE_SHIPS = Arrays.asList(1, 1, 2, 2, 3, 4, 5);
@@ -38,17 +37,13 @@ public class Game {
     }
 
     class Player implements Runnable {
-        private PlayerSocket playerSocket;
-        private Scanner in;
-        private PrintWriter out;
+        private HeartbeatClient playerSocket;
         private List<Ship> ships;
         private Player opponent;
         private List<String> shotHistory;
 
-        public Player(PlayerSocket playerSocket) {
+        public Player(HeartbeatClient playerSocket) {
             this.playerSocket = playerSocket;
-            this.in = playerSocket.getIn();
-            this.out = playerSocket.getOut();
             this.shotHistory = new ArrayList<>();
         }
 
@@ -60,24 +55,38 @@ public class Game {
 
             try {
                 // grid disposition
-                do {
-                    ships = setupGrid(in, out);
-                } while (ships == null);
+                ships = setupGrid(playerSocket);
+                // If there was an error like other player disconnected
+                if (ships == null) {
+                    // don't disconnect this player now because Scanner may have not buffered message (Windows 10 problem)
+                    return;
+                }
+
                 playersReady.countDown();
                 playersReady.await();
 
                 // game start
-                out.println("GAME_START");
+                playerSocket.println("GAME_START");
                 // initial TURN_START
                 if (currentPlayer == this)
-                    out.println("TURN_START");
+                    playerSocket.println("TURN_START");
 
-                //TODO: hasNextLine is blocking, when a player disconnect with ^C, it's not elaborated
-                while (in.hasNextLine()) {
-                    nextLine = in.nextLine();
+                while (true) {
+                    // Wait until a message is available. Meanwhile checks if opponent disconnected
+                    while (!playerSocket.available()) {
+                        if (opponent.playerSocket.isClosed()) {
+                            playerSocket.println("WIN_OPPONENT_DC");
+                            return;
+                        } else {
+                            Thread.sleep(10);
+                        }
+                    }
 
-                    // Check if it's not player's turn
-                    if (currentPlayer != this) {
+                    nextLine = playerSocket.getOneMessage();
+
+
+                    // Check if it's not player's turn or a ping message has been received
+                    if (currentPlayer != this || nextLine.startsWith("PING")) {
                         continue;
                     }
 
@@ -93,13 +102,13 @@ public class Game {
                                 throw new NumberFormatException("Invalid coordinates");
                             }
                         } catch (NumberFormatException e) {
-                            out.println("INVALID");
+                            playerSocket.println("INVALID");
                             continue;
                         }
 
                         // check if shot was already thrown in this game
                         if (this.shotHistory.contains(shot)) {
-                            out.println("DUPLICATE");
+                            playerSocket.println("DUPLICATE");
                             continue;
                         }
 
@@ -108,23 +117,23 @@ public class Game {
                         shotResult = this.opponent.shoot(shot);
                         switch (shotResult.getStatus()) {
                             case HIT:
-                                out.println("HIT");
-                                opponent.out.println("HIT_" + shot);
+                                playerSocket.println("HIT");
+                                opponent.playerSocket.println("HIT_" + shot);
                                 break;
                             case OCEAN:
-                                out.println("OCEAN");
-                                opponent.out.println("OCEAN_" + shot);
+                                playerSocket.println("OCEAN");
+                                opponent.playerSocket.println("OCEAN_" + shot);
                                 break;
                             case SANK:
-                                out.println("SANK_" + shotResult.getSankShip().toString());
-                                opponent.out.println("SANK_" + shotResult.getSankShip().toString());
+                                playerSocket.println("SANK_" + shotResult.getSankShip().toString());
+                                opponent.playerSocket.println("SANK_" + shotResult.getSankShip().toString());
                                 break;
                         }
 
                         // check if player Won the game
                         if (opponent.hasLost()) {
-                            out.println("WIN");
-                            opponent.out.println("LOST_" + this.ships.stream()
+                            playerSocket.println("WIN");
+                            opponent.playerSocket.println("LOST_" + this.ships.stream()
                                     .map(Ship::toString)
                                     .collect(Collectors.joining("_"))
                             );
@@ -133,31 +142,22 @@ public class Game {
 
                         // End turn and pass the game to the next player
                         currentPlayer = opponent;
-                        out.println("TURN_END");
-                        opponent.out.println("TURN_START");
+                        playerSocket.println("TURN_END");
+                        opponent.playerSocket.println("TURN_START");
                     } else {
-                        out.println("INVALID");
+                        playerSocket.println("INVALID");
                         continue;
                     }
                 }
             } catch (IllegalStateException | NoSuchElementException e) {
                 // Input Scanner closed or SIGINT
-                opponent.out.println("WIN_OPPONENT_DC");
+                opponent.playerSocket.println("WIN_OPPONENT_DC");
             } catch (InterruptedException e) {
                 // Catches error while awaiting game ready state
                 e.printStackTrace();
             } finally {
-                try {
-                    System.out.println(String.format("[*] '%s' disconnected", playerSocket.getSocket().getRemoteSocketAddress().toString()));
-                    opponent.playerSocket.getSocket().close();
-                    this.playerSocket.getSocket().close();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
+                Thread.currentThread().interrupt();
             }
-
-            Thread.currentThread().interrupt();
-            return;
         }
 
         /**
@@ -205,11 +205,10 @@ public class Game {
          * - Checks there's the right number of ships
          * - Checks ships disposition don't overlap or go outside the grid.
          *
-         * @param in  the player input socket stream Scanner
-         * @param out the player output socket stream PrintWriter
+         * @param playerSocket The HeartbeatClient that manages the player socket
          * @return The list of Ships. In case of unknown error, will return null.
          */
-        private List<Ship> setupGrid(Scanner in, PrintWriter out) {
+        private List<Ship> setupGrid(HeartbeatClient playerSocket) {
             String grid;
             String[] inputShips;
             boolean isGridOk;
@@ -219,31 +218,43 @@ public class Game {
                 // GET grid and checkGrid() -> if Ok, try parseGrid() -> if Ok, continue to game
                 isGridOk = false;
                 do {
-                    out.println("SEND_GRID");
-                    if (in.hasNextLine()) {
-                        grid = in.nextLine();
+                    playerSocket.println("SEND_GRID");
 
-                        inputShips = grid.split("_");
-
-                        if (inputShips.length != NUM_SHIPS || !checkLenOfAllElements(inputShips, 7) || !checkShipsFormat(inputShips)) {
-                            out.println("GRID_ERR");
-                        } else {
-                            // PARSE Grid
-                            // call parseGrid only after initial format checking
-                            parsedShips = parseGrid(inputShips);
-                            if (parsedShips == null) {
-                                out.println("GRID_ERR");
-                            }
-                            isGridOk = true;
+                    // Wait for message
+                    while (!playerSocket.available()) {
+                        if (playerSocket.isClosed()) {
+                            return null;
                         }
+                        if (opponent.playerSocket.isClosed()) {
+                            playerSocket.println("WIN_OPPONENT_DC");
+                            return null;
+                        }
+
+                        Thread.sleep(10);
+                    }
+
+                    grid = playerSocket.getOneMessage();
+
+                    inputShips = grid.split("_");
+
+                    if (inputShips.length != NUM_SHIPS || !checkLenOfAllElements(inputShips, 7) || !checkShipsFormat(inputShips)) {
+                        playerSocket.println("GRID_ERR");
+                    } else {
+                        // PARSE Grid
+                        // call parseGrid only after initial format checking
+                        parsedShips = parseGrid(inputShips);
+                        if (parsedShips == null) {
+                            playerSocket.println("GRID_ERR");
+                        }
+                        isGridOk = true;
                     }
 
                 } while (!isGridOk);
 
-                out.println("GRID_OK");
+                playerSocket.println("GRID_OK");
                 return parsedShips;
 
-            } catch (IllegalStateException e) {
+            } catch (IllegalStateException | InterruptedException e) {
                 e.printStackTrace();
             }
 

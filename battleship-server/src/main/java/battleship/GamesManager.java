@@ -1,6 +1,6 @@
 package battleship;
 
-import battleship.util.PlayerSocket;
+import battleship.heartbeat.HeartbeatClient;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -13,7 +13,7 @@ class GamesManager {
         this.gamesPool = Executors.newCachedThreadPool();
     }
 
-    public void create(PlayerSocket socketP1, PlayerSocket socketP2) throws IllegalArgumentException {
+    public void create(HeartbeatClient socketP1, HeartbeatClient socketP2) throws IllegalArgumentException {
         if (socketP1 == null || socketP2 == null) {
             throw new IllegalArgumentException("Player socket is null");
         }

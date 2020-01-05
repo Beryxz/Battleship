@@ -1,10 +1,8 @@
 package battleship;
 
-import battleship.util.PlayerSocket;
+import battleship.heartbeat.HeartbeatClient;
 
-import java.io.IOException;
 import java.lang.management.ManagementFactory;
-import java.net.Socket;
 import java.util.LinkedList;
 import java.util.concurrent.Executors;
 import java.util.concurrent.RejectedExecutionException;
@@ -14,7 +12,7 @@ import java.util.concurrent.TimeUnit;
 public class QueueManager {
     private static final int QUEUE_MANAGER_DELAY = 2000; // ms to wait before checking again when <2 players in queue
 
-    private LinkedList<PlayerSocket> queue;
+    private LinkedList<HeartbeatClient> queue;
     private ScheduledExecutorService queueManager;
     private ScheduledExecutorService statusPrinter;
     private GamesManager gamesManager;
@@ -40,16 +38,29 @@ public class QueueManager {
     }
 
     private Runnable playerMatcher = () -> {
-        while (length() >= 2) {
-            // With large amount of requests this may slow down the queueManager since it's run with one thread and create() is blocking
-            PlayerSocket
-                    ps1 = queue.pop(),
-                    ps2 = queue.pop();
+        // check to update player in queue when there's only 1 player
+        if (length() == 1) {
+            if (queue.getFirst().isClosed())
+                queue.pop();
+        }
+        else {
+            while (length() >= 2) {
+                // With large amount of requests this may slow down the queueManager since it's run with one thread and create() is blocking
+                HeartbeatClient ps1 = queue.pop();
+                if (ps1.isClosed())
+                    continue;
 
-            ps1.getOut().println("OPPONENT_FOUND");
-            ps2.getOut().println("OPPONENT_FOUND");
+                HeartbeatClient ps2 = queue.pop();
+                if (ps2.isClosed()) {
+                    queue.push(ps1);
+                    continue;
+                }
 
-            gamesManager.create(ps1, ps2);
+                ps1.println("OPPONENT_FOUND");
+                ps2.println("OPPONENT_FOUND");
+
+                gamesManager.create(ps1, ps2);
+            }
         }
     };
 
@@ -62,15 +73,13 @@ public class QueueManager {
      *
      * @param player Player socket
      * @throws IllegalAccessException If socket is null
-     * @throws IOException            If PlayerSocket streams couldn't be obtained
      */
-    public void add(Socket player) throws IllegalAccessException, IOException {
+    public void add(HeartbeatClient player) throws IllegalAccessException {
         if (player == null)
             throw new IllegalAccessException("Player socket is null");
 
-        PlayerSocket playerSocket = new PlayerSocket(player);
-        queue.add(playerSocket);
-        playerSocket.getOut().println("OPPONENT_WAIT");
+        queue.add(player);
+        player.println("OPPONENT_WAIT");
     }
 
     public int length() {

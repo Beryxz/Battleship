@@ -26,6 +26,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.ResourceBundle;
+import java.util.concurrent.ScheduledExecutorService;
 
 public class GameMenuController implements Initializable {
     @FXML
@@ -58,13 +59,16 @@ public class GameMenuController implements Initializable {
     private String playerGrid;
     private int[] availableShipsLengths = {2, 2, 1, 1, 1};
 
-    public GameMenuController(final PlayerSocket gsSocket, final String playerGrid) throws IllegalArgumentException {
+    private ScheduledExecutorService heartbeatThread;
+
+    public GameMenuController(final PlayerSocket gsSocket, final String playerGrid, final ScheduledExecutorService heartbeatThread) throws IllegalArgumentException {
         if (gsSocket == null) {
             throw new IllegalArgumentException("gsSocket is null");
         }
 
         this.gsSocket = gsSocket;
         this.playerGrid = playerGrid;
+        this.heartbeatThread = heartbeatThread;
     }
 
     @FXML
@@ -128,6 +132,7 @@ public class GameMenuController implements Initializable {
         // Events Handlers
         backMainMenu.setOnMouseClicked(mouseEvent -> {
             try {
+                heartbeatThread.shutdownNow();
                 gsSocket.getSocket().close();
                 switchToMainMenu();
             } catch (IOException e) {
@@ -206,7 +211,12 @@ public class GameMenuController implements Initializable {
         while (gsSocket.getIn().hasNextLine()) {
             String msg = gsSocket.getIn().nextLine();
 
-            if (!this.ourTurn) {
+            if (msg.equals("WIN_OPPONENT_DC")) {
+                Platform.runLater(() -> {
+                    infoLabel.setText("Opponent disconnected. You Won!");
+                    endDialog.setVisible(true);
+                });
+            } else if (!this.ourTurn) {
                 if (msg.equals("TURN_START")) {
                     ourTurn = true;
                     Platform.runLater(() -> {
@@ -297,7 +307,7 @@ public class GameMenuController implements Initializable {
                     });
                 } else if (msg.startsWith("WIN")) {
                     Platform.runLater(() -> {
-                        infoLabel.setText("You Win!");
+                        infoLabel.setText("You Won!");
                         endDialog.setVisible(true);
                     });
                 }

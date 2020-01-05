@@ -36,7 +36,36 @@ public class PlayerSocket {
         return out;
     }
 
+    /**
+     * Print a message in the output stream
+     *
+     * @param msg The message to be printed
+     * @throws IllegalArgumentException If argument is null
+     */
+    public void println(String msg) throws IllegalArgumentException {
+        if (msg == null) {
+            throw new IllegalArgumentException("Message is null");
+        }
+
+        out.println(msg);
+    }
+
     public Socket getSocket() {
         return socket;
+    }
+
+    /**
+     * Properly closes the socket
+     * @throws Throwable
+     */
+    @Override
+    protected void finalize() throws Throwable {
+        try {
+            in.close();
+            out.close();
+            socket.close();
+        } finally {
+            super.finalize();
+        }
     }
 }

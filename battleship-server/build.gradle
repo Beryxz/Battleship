@@ -5,7 +5,7 @@ plugins {
 
 mainClassName = 'battleship.Server'
 
-version '3.1'
+version '4.0'
 
 sourceCompatibility = 1.8
 

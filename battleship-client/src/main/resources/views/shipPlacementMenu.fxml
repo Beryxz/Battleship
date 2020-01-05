@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <?import javafx.scene.control.*?>
+<?import javafx.scene.effect.DropShadow?>
 <?import javafx.scene.layout.*?>
 <?import javafx.scene.shape.Line?>
 <?import javafx.scene.text.*?>
@@ -109,10 +110,20 @@
     <Line endX="17" layoutX="541.0" layoutY="240.0" startX="-100.0" stroke="WHITE" />
     <Line endX="-100.0" endY="108.0" layoutX="601.0" layoutY="164.0" startX="-100.0" startY="15" stroke="WHITE" />
     <Line endX="17" layoutX="541.0" layoutY="208.0" startX="-100.0" stroke="WHITE" />
-    <Button fx:id="confirmGrid" disable="true" layoutX="399.0" layoutY="299.0" mnemonicParsing="false" prefHeight="25.0" prefWidth="110.0" text="Confirm Grid" />
-    <Button fx:id="clearGrid" layoutX="523.0" layoutY="299.0" mnemonicParsing="false" prefHeight="25.0" prefWidth="90.0" text="Clear Grid" />
-    <Pane fx:id="waitOpponent" layoutX="380.0" layoutY="332.0" prefHeight="52.0" prefWidth="241.0" visible="false">
+    <Button fx:id="confirmGrid" disable="true" layoutX="399.0" layoutY="289.0" mnemonicParsing="false" prefHeight="25.0" prefWidth="110.0" text="Confirm Grid" />
+    <Button fx:id="clearGrid" layoutX="523.0" layoutY="289.0" mnemonicParsing="false" prefHeight="25.0" prefWidth="90.0" text="Clear Grid" />
+    <Pane fx:id="waitOpponent" layoutX="380.0" layoutY="328.0" prefHeight="52.0" prefWidth="241.0" visible="false">
         <ProgressIndicator layoutX="185.0" layoutY="-1.0" />
         <Text layoutX="14.0" layoutY="31.0" strokeType="OUTSIDE" strokeWidth="0.0" text="Waiting for opponent" />
+    </Pane>
+    <Pane fx:id="opponentDisconnected" layoutX="372.0" layoutY="45.0" prefHeight="313.0" prefWidth="261.0"
+          visible="false">
+        <effect>
+            <DropShadow height="30.0" radius="14.5" spread="0.2" width="30.0"/>
+        </effect>
+        <Text layoutX="26.0" layoutY="100.0" strokeType="OUTSIDE" strokeWidth="0.0"
+              text="Opponent disconnected. You won!" wrappingWidth="210.0"/>
+        <Button fx:id="mainMenuBtn" layoutX="41.0" layoutY="194.0" mnemonicParsing="false" prefHeight="52.0"
+                prefWidth="180.0" text="Back to Main Menu" wrapText="true"/>
     </Pane>
 </AnchorPane>

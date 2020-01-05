@@ -117,3 +117,13 @@ In case of HIT, OCEAN and SANK_..., the same response is sent to the other playe
 After a shoot, if a player sank all the opponent ships, `WIN` and `LOST_...` are sent to the corresponding players and the game ends.
 
 `LOST_XXYY_...` message contains all the remaining ships cells.
+
+if during the match or during the placement of the ships, the opponent disconnects, the server ends the game and send `WIN_OPPONENT_DC` to the player.
+
+### Heartbeat
+
+Managed by the Server classes: `HeartbeatManager`, `HeartbeatClient`.
+
+Server requires that the client is constantly up. To ensure client availability, if nothing is received after the amount of time defined in `disconnectTimeout` (2s by default) the client is considered unavailable and is disconnected from the server.
+
+To keep a client alive a constant sending of `PING` messagges before the disconnect timeout runs out, is required.

@@ -28,6 +28,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.ResourceBundle;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ScheduledExecutorService;
 
 public class ShipPlacementMenuController implements Initializable {
     @FXML
@@ -65,6 +66,10 @@ public class ShipPlacementMenuController implements Initializable {
     public Pane waitOpponent;
     @FXML
     public Button toggleOrientation;
+    @FXML
+    public Pane opponentDisconnected;
+    @FXML
+    public Button mainMenuBtn;
 
     public static final int GRID_SIZE = 10;
     public static final int[] shipsLengths = {2, 2, 1, 1, 1};
@@ -74,15 +79,18 @@ public class ShipPlacementMenuController implements Initializable {
     private PlayerSocket gsSocket;
     private char shipOrientation;
 
+    private ScheduledExecutorService heartbeatThread;
+
     /**
      * cellState has the values: 0=(water), 1=(ship | waterNextToShip). Ship's shouldn't be placed on cellState 1
      */
     private boolean[][] placeableGrid = new boolean[GRID_SIZE][GRID_SIZE];
 
-    public ShipPlacementMenuController(final PlayerSocket gsSocket) {
+    public ShipPlacementMenuController(final PlayerSocket gsSocket, final ScheduledExecutorService heartbeatThread) {
         this.gsSocket = gsSocket;
         this.shipsCells = new ArrayList<>();
         this.availableShipsLengths = shipsLengths.clone();
+        this.heartbeatThread = heartbeatThread;
     }
 
     @Override
@@ -211,12 +219,46 @@ public class ShipPlacementMenuController implements Initializable {
                 CompletableFuture
                         .runAsync(() -> waitGameStart(this.gsSocket))
                         .thenRun(() -> Platform.runLater(this::switchToGameMenu));
+            } else if (response.equals("WIN_OPPONENT_DC")) {
+                opponentDisconnected.setVisible(true);
             } else {
                 clearGrid.setDisable(false);
                 toggleOrientation.setDisable(false);
                 throw new IllegalStateException("Server returned GRID_ERR of a supposedly valid grid");
             }
         });
+
+        mainMenuBtn.setOnMouseClicked(mouseEvent -> {
+            try {
+                heartbeatThread.shutdownNow();
+                gsSocket.getSocket().close();
+                switchToMainMenu();
+            } catch (IOException e) {
+                e.printStackTrace();
+                Platform.exit();
+            }
+        });
+    }
+
+    /**
+     * Change stage to "MainMenu"
+     */
+    private void switchToMainMenu() {
+        try {
+            // Get primaryStage
+            Stage stage = (Stage) trackingGrid.getScene().getWindow();
+
+            // Load gameMenu
+            FXMLLoader mainMenuLoader = new FXMLLoader(Objects.requireNonNull(getClass().getClassLoader().getResource("views/mainMenu.fxml")));
+            Parent mainMenu = mainMenuLoader.load();
+            stage.setTitle("Battleship");
+            // Switch stages
+            stage.setScene(new Scene(mainMenu, 400, 400));
+            stage.setResizable(false);
+            stage.sizeToScene();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     /**
@@ -229,12 +271,13 @@ public class ShipPlacementMenuController implements Initializable {
 
             // Load gameMenu
             FXMLLoader gameMenuLoader = new FXMLLoader(Objects.requireNonNull(getClass().getClassLoader().getResource("views/gameMenu.fxml")));
-            gameMenuLoader.setControllerFactory(aClass -> new GameMenuController(gsSocket, String.join("_", shipsCells)));
+            gameMenuLoader.setControllerFactory(aClass -> new GameMenuController(gsSocket, String.join("_", shipsCells), heartbeatThread));
             Parent gameMenu = gameMenuLoader.load();
             stage.setTitle("Battleship - Game");
             // Set on exit resources disposal
             stage.setOnCloseRequest(windowEvent -> {
                 try {
+                    heartbeatThread.shutdownNow();
                     gsSocket.getSocket().close();
                 } catch (IOException e) {
                     e.printStackTrace();
@@ -312,11 +355,11 @@ public class ShipPlacementMenuController implements Initializable {
                 length1.setSelected(true);
             } else if (!length2.isDisabled()) {
                 length2.setSelected(true);
-            }  else if (!length3.isDisabled()) {
+            } else if (!length3.isDisabled()) {
                 length3.setSelected(true);
-            }  else if (!length4.isDisabled()) {
+            } else if (!length4.isDisabled()) {
                 length4.setSelected(true);
-            }  else if (!length5.isDisabled()) {
+            } else if (!length5.isDisabled()) {
                 length5.setSelected(true);
             }
         }

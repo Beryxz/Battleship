@@ -1,8 +1,10 @@
 package battleship;
 
+import battleship.heartbeat.HeartbeatClient;
+import battleship.heartbeat.HeartbeatManager;
+
 import java.io.IOException;
 import java.net.ServerSocket;
-import java.net.Socket;
 import java.util.concurrent.RejectedExecutionException;
 
 public class Server {
@@ -13,17 +15,18 @@ public class Server {
         //TODO: Read configs from external file (like threadPoolSize)
         try {
             QueueManager queueManager = new QueueManager();
+            HeartbeatManager heartbeatManager = new HeartbeatManager(2000);
 
             // Socket listener
             ServerSocket listener = new ServerSocket(GAMESERVER_PORT);
             System.out.println("[*] Listening for connections on port: " + GAMESERVER_PORT);
 
             while (true) {
-                //TODO: If a player disconnects while in the queue it isn't removed (heartbeat / keep-alive)
                 try {
-                    Socket s = listener.accept();
-                    System.out.println(String.format("[*] '%s' connected", s.getRemoteSocketAddress().toString()));
-                    queueManager.add(s);
+                    HeartbeatClient c = new HeartbeatClient(listener.accept(), 1000);
+                    System.out.println(String.format("[*] '%s' connected", c.getSocketInfo()));
+                    heartbeatManager.add(c);
+                    queueManager.add(c);
                 } catch (IllegalAccessException e) {
                     System.out.println("[!] The listener returned an empty socket");
                     e.printStackTrace();
